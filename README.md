@@ -1,18 +1,24 @@
 # kalle/xml
 
-`kalle/xml` is a strict, builder-first XML writer for modern PHP.
+`kalle/xml` is a strict, writer-focused XML library for PHP 8.2+.
 
-It focuses on a small, predictable API for building XML documents with correct
-escaping, namespace-aware names, and deterministic output.
+It provides two complementary writing APIs:
+
+- an immutable document model for building and serializing complete XML trees
+- `StreamingXmlWriter` for incremental output to strings, files, and streams
+
+The package stays intentionally narrow in scope: XML writing, namespaces,
+escaping, and validation. It does not try to become a parser or query library.
 
 ## Why kalle/xml
 
-- immutable document and node objects
+- immutable document model for tree-based XML construction
 - explicit namespace-aware names via `Xml::qname()`
 - deterministic serialization for tests and reproducible builds
 - early XML 1.0 validation for names and character data
 - compact and pretty-printed output from the same model
-- string output and file output through the same serializer
+- string, file, and stream output through the same writer path
+- `StreamingXmlWriter` for large or incremental output scenarios
 
 ## Installation
 
@@ -22,7 +28,19 @@ composer require kalle/xml
 
 See `examples/` for runnable scripts.
 
-## Quick Start
+## Choosing an API
+
+Use the document model when you want to compose an XML tree in memory, reuse
+subtrees, or keep test fixtures highly readable.
+
+Use `StreamingXmlWriter` when output is generated incrementally, documents are
+large, or you want to write directly to a file path or PHP stream without
+building the full tree first.
+
+Both APIs share the same XML rules around escaping, namespace handling, and
+writer configuration.
+
+## Document Model Quick Start
 
 Build a document and call `toString()`:
 
@@ -49,7 +67,73 @@ Output:
 <?xml version="1.0" encoding="UTF-8"?><catalog><book isbn="9780132350884">Clean Code</book></catalog>
 ```
 
+Write an existing document directly to a stream resource when you do not want
+an intermediate string:
+
+```php
+<?php
+
+declare(strict_types=1);
+
+use Kalle\Xml\Builder\Xml;
+use Kalle\Xml\Writer\WriterConfig;
+
+$stream = fopen('php://output', 'wb');
+
+if ($stream === false) {
+    throw new RuntimeException('Unable to open php://output.');
+}
+
+Xml::document(
+    Xml::element('catalog')
+        ->child(Xml::element('book')->attribute('isbn', '9780132350884')),
+)->withoutDeclaration()->saveToStream($stream, WriterConfig::pretty(emitDeclaration: false));
+```
+
+## Streaming Writer Quick Start
+
+Use `StreamingXmlWriter` when you want to generate XML incrementally without
+building the whole document tree first.
+
+```php
+<?php
+
+declare(strict_types=1);
+
+use Kalle\Xml\Writer\StreamingXmlWriter;
+use Kalle\Xml\Writer\WriterConfig;
+
+$writer = StreamingXmlWriter::forStream(
+    fopen('php://output', 'wb'),
+    WriterConfig::pretty(),
+);
+
+$writer
+    ->startDocument()
+    ->startElement('catalog')
+    ->writeComment('nightly export')
+    ->startElement('book')
+    ->writeAttribute('isbn', '9780132350884')
+    ->startElement('title')
+    ->writeText('Clean Code')
+    ->endElement()
+    ->endElement()
+    ->endElement()
+    ->finish();
+```
+
+Streaming writer notes:
+
+- `forString()` buffers output in memory, `forFile()` writes to a file path, and `forStream()` writes to a PHP stream resource
+- `toString()` is available only for `forString()` writers after `finish()`
+- namespace declarations are auto-resolved from element and attribute names
+- `writeElement()` lets you mix prebuilt immutable subtrees into a stream
+- pretty-printed imperative streaming is intended for structural content; use compact mode for unconstrained mixed-content generation
+
 ## Namespace-Aware API
+
+The same namespace rules apply to the document model and to
+`StreamingXmlWriter`.
 
 Use `Xml::qname()` for namespace-aware element and attribute names. Raw
 `prefix:name` strings are rejected on purpose.
@@ -93,11 +177,11 @@ Namespace rules:
 - required namespaces are declared automatically when missing from scope
 - namespace declarations are serialized before normal attributes
 
-## Writer Model
+## Escaping and Validation
 
-Escaping happens during serialization, not while building the object graph.
-The model stores raw values, validates them early, and renders them
-deterministically.
+Escaping happens during serialization or streaming emission, not while building
+the object graph. The model stores raw values, validates them early, and
+renders them deterministically.
 
 ```php
 <?php
@@ -141,9 +225,10 @@ The library rejects invalid XML early:
 - invalid comment and processing-instruction content
 - namespace declaration conflicts
 - unsupported declaration settings such as non-UTF-8 encodings
+- invalid streaming writer state transitions
 
 Exception messages are intentionally short and aimed at the call site, so
-invalid builder input is easy to diagnose.
+invalid writer input is easy to diagnose.
 
 ## Key Repository Directories
 
@@ -158,12 +243,12 @@ src/
   Namespace/    Namespace declarations and scope handling
   Node/         Element and other writer node types
   Validate/     XML name validation
-  Writer/       Serializer and writer configuration
+  Writer/       Streaming writer, output targets, namespace emission, and configuration
 tests/
   Unit/         Focused object and validation tests
-  Integration/  Serializer, file output, and parser-backed checks
-examples/       Runnable examples such as catalog.php and namespaced-feed.php
-benchmarks/     Reserved for future benchmark fixtures
+  Integration/  Document/streaming output, stream/file output, and parser-backed checks
+examples/       Runnable examples such as catalog.php, streaming-catalog.php, and streaming-feed.php
+benchmarks/     Maintained performance comparison fixtures
 docs/           Maintainer-facing notes
 ```
 
@@ -179,7 +264,14 @@ composer cs-fix
 composer qa
 ```
 
-The integration suite uses `DOMDocument` to verify that serialized XML is
+Benchmarking:
+
+```bash
+php benchmarks/write-performance.php
+php benchmarks/write-performance.php namespace-heavy 25
+```
+
+The integration suite uses `DOMDocument` to verify that writer output is
 well-formed, not just string snapshots.
 
 ## Scope
@@ -190,17 +282,20 @@ Included today:
 - elements, text, comments, CDATA, and processing instructions
 - namespace-aware names and namespace declarations
 - deterministic compact and pretty-printed serialization
-- file output with library-specific write exceptions
+- file and stream output with library-specific write exceptions
+- imperative streaming XML writing for writer-heavy workloads
 
 Not included:
 
 - parsing
 - XPath
 - XSD validation
+- reader/query APIs
 - streaming parser APIs
 
 ## Status
 
-The project is intentionally narrow in scope for its first public release. The
-priority is API clarity, XML correctness, and a solid foundation for the writer
-API.
+v1.1 extends the original document model with production-oriented streaming XML
+writing. The project remains intentionally narrow in scope: API clarity, XML
+correctness, and a solid writer foundation come before scope expansion. See
+`docs/roadmap.md` for the current milestone summary.

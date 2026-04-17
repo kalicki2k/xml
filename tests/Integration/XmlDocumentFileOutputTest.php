@@ -6,15 +6,19 @@ namespace Kalle\Xml\Tests\Integration;
 
 use Kalle\Xml\Builder\Xml;
 use Kalle\Xml\Exception\FileWriteException;
+use Kalle\Xml\Exception\StreamWriteException;
 use Kalle\Xml\Writer\WriterConfig;
 use PHPUnit\Framework\TestCase;
 
 use function bin2hex;
+use function fclose;
 use function file_get_contents;
 use function file_put_contents;
 use function in_array;
 use function min;
 use function random_bytes;
+use function rewind;
+use function stream_get_contents;
 use function stream_get_wrappers;
 use function stream_wrapper_register;
 use function stream_wrapper_unregister;
@@ -131,6 +135,86 @@ final class XmlDocumentFileOutputTest extends TestCase
         }
     }
 
+    public function testItSavesADocumentToAStreamResource(): void
+    {
+        $stream = fopen('php://temp', 'wb+');
+
+        self::assertIsResource($stream);
+
+        try {
+            Xml::document(
+                Xml::element('catalog')
+                    ->child(Xml::element('book')->attribute('isbn', '9780132350884')),
+            )->saveToStream($stream, WriterConfig::compact(emitDeclaration: false));
+
+            rewind($stream);
+
+            self::assertSame(
+                '<catalog><book isbn="9780132350884"/></catalog>',
+                (string) stream_get_contents($stream),
+            );
+        } finally {
+            fclose($stream);
+        }
+    }
+
+    public function testItRaisesAStreamSpecificExceptionForPartialWritesToAProvidedResource(): void
+    {
+        $this->registerPartialWriteWrapper();
+
+        $stream = fopen(self::PARTIAL_WRITE_SCHEME . '://document.xml', 'wb');
+
+        self::assertIsResource($stream);
+
+        try {
+            $this->expectException(StreamWriteException::class);
+            $this->expectExceptionMessage('Incomplete XML write');
+            $this->expectExceptionMessage('kalle-partial-write://document.xml');
+
+            Xml::document(Xml::element('catalog'))->saveToStream($stream, WriterConfig::compact());
+        } finally {
+            fclose($stream);
+            $this->unregisterPartialWriteWrapper();
+        }
+    }
+
+    public function testItRejectsNonStreamResourcesWhenSavingToAStream(): void
+    {
+        $directory = opendir(sys_get_temp_dir());
+
+        self::assertIsResource($directory);
+
+        try {
+            $this->expectException(StreamWriteException::class);
+            $this->expectExceptionMessage('stream resource');
+
+            Xml::document(Xml::element('catalog'))->saveToStream($directory, WriterConfig::compact());
+        } finally {
+            closedir($directory);
+        }
+    }
+
+    public function testItRejectsNonWritableStreamResourcesWhenSavingToAStream(): void
+    {
+        $path = tempnam(sys_get_temp_dir(), 'kalle-xml-readonly-');
+
+        self::assertNotFalse($path);
+
+        $stream = fopen($path, 'rb');
+
+        self::assertIsResource($stream);
+
+        try {
+            $this->expectException(StreamWriteException::class);
+            $this->expectExceptionMessage('not writable');
+
+            Xml::document(Xml::element('catalog'))->saveToStream($stream, WriterConfig::compact());
+        } finally {
+            fclose($stream);
+            @unlink($path);
+        }
+    }
+
     private function registerPartialWriteWrapper(): void
     {
         if (in_array(self::PARTIAL_WRITE_SCHEME, stream_get_wrappers(), true)) {
@@ -153,6 +237,11 @@ final class PartialWriteStreamWrapper
     public mixed $context = null;
 
     private int $writeCalls = 0;
+
+    public function stream_eof(): bool
+    {
+        return false;
+    }
 
     public function stream_open(string $path, string $mode, int $options, ?string &$openedPath): bool
     {

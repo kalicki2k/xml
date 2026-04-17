@@ -6,10 +6,9 @@ namespace Kalle\Xml\Tests\Unit;
 
 use Kalle\Xml\Builder\Xml;
 use Kalle\Xml\Writer\WriterConfig;
-use Kalle\Xml\Writer\XmlSerializer;
 use PHPUnit\Framework\TestCase;
 
-final class XmlSerializerTest extends TestCase
+final class XmlDocumentSerializationTest extends TestCase
 {
     public function testItSerializesASimpleDocument(): void
     {
@@ -22,7 +21,7 @@ final class XmlSerializerTest extends TestCase
                 ),
         );
 
-        $xml = (new XmlSerializer())->serialize($document);
+        $xml = $document->toString();
 
         self::assertSame(
             '<?xml version="1.0" encoding="UTF-8"?><catalog><book isbn="9780132350884">Clean Code</book></catalog>',
@@ -38,16 +37,14 @@ final class XmlSerializerTest extends TestCase
                 ->child(Xml::element('magazine')),
         )->withoutDeclaration();
 
-        $serializer = new XmlSerializer();
-
         self::assertSame(
             '<catalog><book/><magazine/></catalog>',
-            $serializer->serialize($document, WriterConfig::compact(emitDeclaration: false)),
+            $document->toString(WriterConfig::compact(emitDeclaration: false)),
         );
 
         self::assertSame(
             "<catalog>\n    <book/>\n    <magazine/>\n</catalog>",
-            $serializer->serialize($document, WriterConfig::pretty(emitDeclaration: false)),
+            $document->toString(WriterConfig::pretty(emitDeclaration: false)),
         );
     }
 
@@ -59,7 +56,7 @@ final class XmlSerializerTest extends TestCase
                 ->text('Use < & enjoy'),
         )->withoutDeclaration();
 
-        $xml = (new XmlSerializer())->serialize($document, WriterConfig::compact(emitDeclaration: false));
+        $xml = $document->toString(WriterConfig::compact(emitDeclaration: false));
 
         self::assertSame(
             '<note title="Fish &amp; &quot;Chips&quot;&#xA;&lt;today&gt;">Use &lt; &amp; enjoy</note>',
@@ -75,7 +72,7 @@ final class XmlSerializerTest extends TestCase
                 ->child(Xml::element('book')),
         )->withoutDeclaration();
 
-        $xml = (new XmlSerializer())->serialize($document, WriterConfig::compact(emitDeclaration: false));
+        $xml = $document->toString(WriterConfig::compact(emitDeclaration: false));
 
         self::assertSame(
             '<catalog><!--generated file--><book/></catalog>',
@@ -91,7 +88,7 @@ final class XmlSerializerTest extends TestCase
                 ->child(Xml::element('book')),
         )->withoutDeclaration();
 
-        $xml = (new XmlSerializer())->serialize($document, WriterConfig::compact(emitDeclaration: false));
+        $xml = $document->toString(WriterConfig::compact(emitDeclaration: false));
 
         self::assertSame(
             '<catalog><?xml-stylesheet href="catalog.xsl" type="text/xsl"?><book/></catalog>',
@@ -106,7 +103,7 @@ final class XmlSerializerTest extends TestCase
                 ->child(Xml::processingInstruction('refresh')),
         )->withoutDeclaration();
 
-        $xml = (new XmlSerializer())->serialize($document, WriterConfig::compact(emitDeclaration: false));
+        $xml = $document->toString(WriterConfig::compact(emitDeclaration: false));
 
         self::assertSame(
             '<catalog><?refresh?></catalog>',
@@ -120,7 +117,7 @@ final class XmlSerializerTest extends TestCase
             Xml::element('script')->child(Xml::cdata('if (a < b && c > d) { return "ok"; }')),
         )->withoutDeclaration();
 
-        $xml = (new XmlSerializer())->serialize($document, WriterConfig::compact(emitDeclaration: false));
+        $xml = $document->toString(WriterConfig::compact(emitDeclaration: false));
 
         self::assertSame(
             '<script><![CDATA[if (a < b && c > d) { return "ok"; }]]></script>',
@@ -138,7 +135,7 @@ final class XmlSerializerTest extends TestCase
                 ->text("line\rbreak"),
         )->withoutDeclaration();
 
-        $xml = (new XmlSerializer())->serialize($document, WriterConfig::compact(emitDeclaration: false));
+        $xml = $document->toString(WriterConfig::compact(emitDeclaration: false));
 
         self::assertSame(
             '<entry empty="" tabbed="a&#x9;b">line&#xD;break</entry>',
@@ -152,7 +149,7 @@ final class XmlSerializerTest extends TestCase
             Xml::element('script')->child(Xml::cdata('alpha ]]> beta')),
         )->withoutDeclaration();
 
-        $xml = (new XmlSerializer())->serialize($document, WriterConfig::compact(emitDeclaration: false));
+        $xml = $document->toString(WriterConfig::compact(emitDeclaration: false));
 
         self::assertSame(
             '<script><![CDATA[alpha ]]]]><![CDATA[> beta]]></script>',
@@ -164,10 +161,10 @@ final class XmlSerializerTest extends TestCase
     {
         $document = Xml::document(Xml::element('catalog'))->withoutDeclaration();
 
-        $xml = (new XmlSerializer())->serialize(
-            $document,
-            WriterConfig::compact(emitDeclaration: false, selfCloseEmptyElements: false),
-        );
+        $xml = $document->toString(WriterConfig::compact(
+            emitDeclaration: false,
+            selfCloseEmptyElements: false,
+        ));
 
         self::assertSame('<catalog></catalog>', $xml);
     }
@@ -181,7 +178,7 @@ final class XmlSerializerTest extends TestCase
                 ->text('!'),
         )->withoutDeclaration();
 
-        $xml = (new XmlSerializer())->serialize($document, WriterConfig::pretty(emitDeclaration: false));
+        $xml = $document->toString(WriterConfig::pretty(emitDeclaration: false));
 
         self::assertSame('<p>Hello <strong>world</strong>!</p>', $xml);
     }
@@ -195,7 +192,7 @@ final class XmlSerializerTest extends TestCase
                 ->child(Xml::element('book')),
         )->withoutDeclaration();
 
-        $xml = (new XmlSerializer())->serialize($document, WriterConfig::pretty(emitDeclaration: false));
+        $xml = $document->toString(WriterConfig::pretty(emitDeclaration: false));
 
         self::assertSame(
             "<catalog>\n    <!--generated file-->\n    <?xml-stylesheet href=\"catalog.xsl\" type=\"text/xsl\"?>\n    <book/>\n</catalog>",
@@ -211,12 +208,11 @@ final class XmlSerializerTest extends TestCase
                 ->child(Xml::element('book')->attribute('isbn', '9780132350884')->text('Clean Code')),
         );
 
-        $serializer = new XmlSerializer();
         $config = WriterConfig::compact();
 
         self::assertSame(
-            $serializer->serialize($document, $config),
-            $serializer->serialize($document, $config),
+            $document->toString($config),
+            $document->toString($config),
         );
     }
 }
