@@ -23,19 +23,19 @@ $document = XmlReader::fromString(
 XML,
 );
 
-$namespaces = [
+$queryNamespaces = [
     'inv' => 'urn:oasis:names:specification:ubl:schema:xsd:Invoice-2',
     'cac' => 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2',
     'cbc' => 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2',
 ];
 
-$supplier = $document->findFirst('/inv:Invoice/cac:AccountingSupplierParty/cac:Party', $namespaces);
+$supplier = $document->findFirst('/inv:Invoice/cac:AccountingSupplierParty/cac:Party', $queryNamespaces);
 
 if ($supplier === null) {
     throw new RuntimeException('Expected the example invoice to contain one supplier party.');
 }
 
-$invoiceId = $document->findFirst('/inv:Invoice/cbc:ID', $namespaces);
+$invoiceId = $document->findFirst('/inv:Invoice/cbc:ID', $queryNamespaces);
 $endpoint = $supplier->findFirst('./cbc:EndpointID[@schemeID="0088"]');
 $supplierName = $supplier->findFirst('./cac:PartyName/cbc:Name');
 

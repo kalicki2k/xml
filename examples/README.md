@@ -3,8 +3,8 @@
 Runnable examples for the public writer, reader, and query APIs:
 
 - `catalog.php` uses the document model for a small pretty-printed catalog
-- `query-feed.php` runs a minimal namespace-aware reader query against a feed document
-- `query-invoice.php` runs document-scoped and element-scoped queries against a namespace-heavy invoice document
+- `query-feed.php` runs a minimal namespace-aware reader query against a feed document and shows how to alias a default namespace for XPath-style queries
+- `query-invoice.php` runs document-scoped and element-scoped element queries against a namespace-heavy invoice document
 - `reading-catalog.php` loads XML from a string and traverses it read-only
 - `reading-config.php` loads a config-like XML document from a string
 - `reading-feed.php` loads namespace-aware XML from a file and reads prefixed attributes

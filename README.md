@@ -11,7 +11,7 @@ It currently provides:
 - `XmlReader` for loading and traversing existing XML through a compact
   read-only API
 - `findAll()` and `findFirst()` on `ReaderDocument` and `ReaderElement` for
-  small namespace-aware queries
+  small namespace-aware element queries
 
 The package stays intentionally narrow in scope: XML writing, namespaces,
 escaping, validation, small-scale read-only traversal, and small-scale
@@ -54,7 +54,8 @@ See `examples/` for runnable scripts covering `Xml`, `StreamingXmlWriter`,
   small, namespace-aware, read-only API with explicit element and attribute
   access.
 - Use reader queries when filtered descendant lookups or namespace-aware
-  selections are clearer than chaining repeated `firstChildElement()` calls.
+  element selections are clearer than chaining repeated `firstChildElement()`
+  calls.
 
 `Xml` and `StreamingXmlWriter` share the same XML rules around escaping,
 namespace handling, and writer configuration. `XmlReader` stays separate, and
@@ -182,9 +183,10 @@ Reader notes:
 
 - `fromString()`, `fromFile()`, and `fromStream()` keep loading separate from the writer APIs
 - `rootElement()`, `firstChildElement()`, `childElements()`, `attributeValue()`, and `text()` cover the common inspection path
-- `findAll()` and `findFirst()` add a small XPath-style query layer on top of the read-only model
+- `findAll()` and `findFirst()` add a small XPath-style query layer on top of the read-only model and return `ReaderElement` matches
 - element and attribute lookups use the same `QualifiedName` model as the writer side
-- in-scope prefixed namespaces are available to queries automatically; default namespaces still need an explicit query alias because XPath does not apply default namespaces automatically
+- queries that select attributes or text directly are outside the intended public query surface; use the returned elements for further traversal and attribute access
+- in-scope prefixed namespaces are available to queries automatically; for a document default namespace, map the URI to an explicit alias such as `['feed' => 'urn:feed']` because XPath does not apply XML default namespaces automatically
 - namespaces in scope are exposed separately from regular attributes
 - the reader stays intentionally small and does not expose the full DOM/XPath surface
 
@@ -196,7 +198,9 @@ reader and query examples.
 ## Reader Query Quick Start
 
 Use the query layer when traversal by repeated `firstChildElement()` calls
-starts getting noisy or when you need filtered descendant lookups.
+starts getting noisy or when you need filtered descendant lookups. The query
+API is element-oriented: `findAll()` and `findFirst()` return `ReaderElement`
+matches that you continue traversing through the reader model.
 
 ```php
 <?php
@@ -209,16 +213,18 @@ $document = XmlReader::fromString(
     '<feed xmlns="urn:feed" xmlns:xlink="urn:xlink"><entry xlink:href="https://example.com/items/1"><title>Blue mug</title></entry></feed>',
 );
 
-$namespaces = [
+// XPath does not apply the XML default namespace automatically, so map it to
+// an explicit query alias.
+$queryNamespaces = [
     'feed' => 'urn:feed',
     'xlink' => 'urn:xlink',
 ];
 
-$entries = $document->findAll('/feed:feed/feed:entry[@xlink:href]', $namespaces);
+$entries = $document->findAll('/feed:feed/feed:entry[@xlink:href]', $queryNamespaces);
 $entry = $entries[0] ?? null;
 
 if ($entry !== null) {
-    echo $entry->findFirst('./feed:title', $namespaces)?->text() . "\n";
+    echo $entry->findFirst('./feed:title', $queryNamespaces)?->text() . "\n";
 }
 ```
 

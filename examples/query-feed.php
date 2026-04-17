@@ -19,13 +19,15 @@ $document = XmlReader::fromString(
 XML,
 );
 
-$namespaces = [
+// XPath does not apply the XML default namespace automatically, so the feed
+// namespace is mapped to an explicit query alias.
+$queryNamespaces = [
     'feed' => 'urn:feed',
     'dc' => 'urn:dc',
     'xlink' => 'urn:xlink',
 ];
 
-$entries = $document->findAll('/feed:feed/feed:entry[@xlink:href]', $namespaces);
+$entries = $document->findAll('/feed:feed/feed:entry[@xlink:href]', $queryNamespaces);
 $entry = $entries[0] ?? null;
 
 if ($entry === null) {
@@ -34,7 +36,7 @@ if ($entry === null) {
 
 echo sprintf(
     "%s | %s | %s\n",
-    $entry->findFirst('./feed:title', $namespaces)?->text() ?? 'unknown',
-    $entry->findFirst('./dc:identifier', $namespaces)?->text() ?? 'n/a',
+    $entry->findFirst('./feed:title', $queryNamespaces)?->text() ?? 'unknown',
+    $entry->findFirst('./dc:identifier', $queryNamespaces)?->text() ?? 'n/a',
     $entry->attributeValue(new QualifiedName('href', 'urn:xlink', 'xlink')) ?? 'n/a',
 );

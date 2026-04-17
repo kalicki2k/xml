@@ -16,7 +16,7 @@ The v1.3 milestone adds:
 - read-only document and element traversal without reader concerns leaking into `Xml`
 - namespace-aware element names, attribute access, and in-scope namespace inspection
 - compact reader traversal centered around `rootElement()`, `firstChildElement()`, and `childElements()`
-- a small XPath-style query layer centered around `findAll()` and `findFirst()` on the reader model
+- a small XPath-style query layer centered around element-oriented `findAll()` and `findFirst()` results on the reader model
 - parse, file-input, and stream-input exceptions with library-specific messages
 - examples and tests for realistic reader and query workflows alongside the existing writer coverage
 
@@ -26,7 +26,7 @@ The package remains intentionally writer-focused with a small complementary
 reader and reader-side query API. Near-term work should improve writer
 ergonomics, reader clarity, query clarity, correctness, performance
 visibility, and documentation quality without expanding into unrelated XML
-features or turning the query layer into a broader framework.
+features or turning the element-oriented query layer into a broader framework.
 
 ## Out Of Scope
 
