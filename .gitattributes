@@ -1,0 +1,10 @@
+/tests export-ignore
+/docs export-ignore
+/examples export-ignore
+/benchmarks export-ignore
+/.github export-ignore
+/.idea export-ignore
+/.php-cs-fixer.dist.php export-ignore
+/phpstan.neon export-ignore
+/phpunit.xml.dist export-ignore
+/AGENTS.md export-ignore

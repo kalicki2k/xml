@@ -1,0 +1,46 @@
+{
+    "name": "kalle/xml",
+    "description": "A modern, strict, builder-first XML library for PHP",
+    "keywords": [
+        "builder",
+        "php",
+        "serializer",
+        "xml"
+    ],
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": "^8.2"
+    },
+    "require-dev": {
+        "ext-dom": "*",
+        "friendsofphp/php-cs-fixer": "^3.80",
+        "phpstan/phpstan": "^2.1",
+        "phpunit/phpunit": "^11.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "Kalle\\Xml\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Kalle\\Xml\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit --configuration=phpunit.xml.dist --colors=always",
+        "stan": "phpstan analyse --configuration=phpstan.neon",
+        "cs-check": "php-cs-fixer fix --config=.php-cs-fixer.dist.php --dry-run --diff",
+        "cs-fix": "php-cs-fixer fix --config=.php-cs-fixer.dist.php --diff --verbose",
+        "qa": [
+            "@test",
+            "@stan",
+            "@cs-check"
+        ]
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "prefer-stable": true
+}
