@@ -16,8 +16,9 @@ Repository layout highlights:
 
 - `src/` contains the library code grouped by concern
 - `src/Namespace/` contains namespace declarations and namespace scope handling
+- `src/Reader/` contains `XmlReader`, `ReaderDocument`, and `ReaderElement`
 - `tests/Unit/` covers focused object behavior and validation
-- `tests/Integration/` covers document/streaming output, file output, and parser-backed checks
+- `tests/Integration/` covers document/streaming output, reader traversal, file output, and parser-backed checks
 - `examples/` contains runnable example scripts
 - `benchmarks/` contains maintained performance comparison fixtures
 - `docs/roadmap.md` tracks the current writer-focused milestone status

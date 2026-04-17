@@ -1,24 +1,29 @@
 # kalle/xml
 
-`kalle/xml` is a strict, writer-focused XML library for PHP 8.2+.
+`kalle/xml` is a strict XML library for PHP 8.2+ with two writer APIs and a
+small read-only reader.
 
-It provides two complementary writing APIs:
+It currently provides:
 
-- an immutable document model for building and serializing complete XML trees
+- `Xml` as the writer-side facade for an immutable document model
 - `StreamingXmlWriter` for incremental output to strings, files, and streams
+- `XmlReader` for loading and traversing existing XML through a compact
+  read-only API
 
 The package stays intentionally narrow in scope: XML writing, namespaces,
-escaping, and validation. It does not try to become a parser or query library.
+escaping, validation, and small-scale read-only traversal. It does not try to
+become a full parser or query framework.
 
 ## Why kalle/xml
 
-- immutable document model for tree-based XML construction
+- `Xml` for tree-based XML construction
 - explicit namespace-aware names via `Xml::qname()`
 - deterministic serialization for tests and reproducible builds
 - early XML 1.0 validation for names and character data
 - compact and pretty-printed output from the same model
 - string, file, and stream output through the same writer path
 - `StreamingXmlWriter` for large or incremental output scenarios
+- `XmlReader` for namespace-aware loading from strings, files, and streams
 
 ## Installation
 
@@ -26,20 +31,22 @@ escaping, and validation. It does not try to become a parser or query library.
 composer require kalle/xml
 ```
 
-See `examples/` for runnable scripts covering the document model, streaming
-output, namespace-aware writing, and file targets.
+See `examples/` for runnable scripts covering `Xml`, `StreamingXmlWriter`, and
+`XmlReader`.
 
 ## Choosing an API
 
-Use the document model when you want to compose an XML tree in memory, reuse
-subtrees, or keep test fixtures highly readable.
+- Use `Xml` when you want to compose an XML tree in memory, reuse subtrees, or
+  keep fixtures and tests highly readable.
+- Use `StreamingXmlWriter` when output is generated incrementally, documents
+  are large, or you want to write directly to a file path or PHP stream
+  without retaining the full tree in memory.
+- Use `XmlReader` when you want to inspect existing XML through a small,
+  namespace-aware, read-only traversal API.
 
-Use `StreamingXmlWriter` when output is generated incrementally, documents are
-large, or you want to write directly to a file path or PHP stream without
-retaining the full tree in memory.
-
-Both APIs share the same XML rules around escaping, namespace handling, and
-writer configuration.
+`Xml` and `StreamingXmlWriter` share the same XML rules around escaping,
+namespace handling, and writer configuration. `XmlReader` stays separate and
+does not turn the package into a query framework.
 
 ## Document Model Quick Start
 
@@ -133,6 +140,42 @@ Streaming writer notes:
 
 See `examples/streaming-to-file.php` for a minimal `forFile()` example that
 also mixes prebuilt elements into a stream.
+
+## Reader Quick Start
+
+Use `XmlReader` when you want to load existing XML from a string, file, or
+stream and inspect it through a small read-only API.
+
+```php
+<?php
+
+declare(strict_types=1);
+
+use Kalle\Xml\Reader\XmlReader;
+
+$document = XmlReader::fromString(
+    '<catalog><book isbn="9780132350884"><title>Clean Code</title></book></catalog>',
+);
+
+$book = $document->rootElement()->firstChildElement('book');
+
+if ($book !== null) {
+    echo $book->attributeValue('isbn') . "\n";
+    echo $book->firstChildElement('title')?->text() . "\n";
+}
+```
+
+Reader notes:
+
+- `fromString()`, `fromFile()`, and `fromStream()` keep loading separate from the writer APIs
+- `rootElement()`, `firstChildElement()`, `childElements()`, `attributeValue()`, and `text()` cover the common inspection path
+- element and attribute lookups use the same `QualifiedName` model as the writer side
+- namespaces in scope are exposed separately from regular attributes
+- the reader stays intentionally small and does not include XPath or broad query helpers
+
+See `examples/reading-catalog.php`, `examples/reading-config.php`,
+`examples/reading-feed.php`, and `examples/reading-stream.php` for runnable
+reader examples.
 
 ## Namespace-Aware API
 
@@ -246,12 +289,13 @@ src/
   Name/         QualifiedName value object
   Namespace/    Namespace declarations and scope handling
   Node/         Element and other writer node types
+  Reader/       Read-only document and element traversal
   Validate/     XML name validation
   Writer/       Streaming writer, output targets, namespace emission, and configuration
 tests/
   Unit/         Focused object and validation tests
-  Integration/  Document/streaming output, stream/file output, and parser-backed checks
-examples/       Runnable examples such as catalog.php, streaming-catalog.php, streaming-to-file.php, and streaming-feed.php
+  Integration/  Document/streaming output, reader traversal, stream/file output, and parser-backed checks
+examples/       Runnable examples such as catalog.php, reading-catalog.php, streaming-catalog.php, and streaming-feed.php
 benchmarks/     Maintained performance comparison fixtures
 docs/           Maintainer-facing notes
 ```
@@ -288,19 +332,22 @@ Included today:
 - deterministic compact and pretty-printed serialization
 - file and stream output with library-specific write exceptions
 - imperative streaming XML writing for writer-heavy workloads
+- read-only document and element traversal via `XmlReader`
 
 Not included:
 
-- parsing
 - XPath
 - XSD validation
-- reader/query APIs
+- mutation APIs for reader-side documents
+- broad query APIs
+- XML-to-array or XML-to-object mapping
 - streaming parser APIs
 
 ## Status
 
-v1.1 extends the original document model with production-oriented streaming XML
-writing. The package is ready for early public use as a focused XML writer, but
-its scope remains intentionally narrow. Near-term releases should keep refining
-the writer surface rather than expanding into parser or query features. See
-`docs/roadmap.md` for the current milestone summary.
+v1.2 extends the writer foundation with a small, separate, read-only XML
+reader. The package remains ready for early public use as a focused XML tool,
+but its scope is still intentionally narrow. Near-term releases should keep
+refining the writer and reader surfaces rather than expanding into XPath,
+mapping, or broad query features. See `docs/roadmap.md` for the current
+milestone summary.

@@ -1,32 +1,36 @@
 # Roadmap
 
-## v1.1 Status
+## v1.2 Status
 
-`kalle/xml` v1.1 is now a two-path writer package:
+`kalle/xml` v1.2 now combines two writer paths with a separate read-only reader:
 
-- immutable document model for tree-based XML construction
+- `Xml` for tree-based XML construction
 - `StreamingXmlWriter` for incremental XML writing
+- `XmlReader` for small, namespace-aware document and element traversal via `ReaderDocument` and `ReaderElement`
 
-The v1.1 milestone adds:
+The v1.2 milestone adds:
 
-- stateful streaming XML writing with explicit start/end operations
-- string, file-path, and PHP stream targets through the same writer foundation
-- namespace-aware streaming for default and prefixed namespaces
-- consistency tests between document-model output and streaming output
-- maintained examples and benchmark fixtures for real writer workflows
+- loading XML from strings, files, and PHP streams
+- read-only document and element traversal without reader concerns leaking into `Xml`
+- namespace-aware element names, attribute access, and in-scope namespace inspection
+- compact reader traversal centered around `rootElement()`, `firstChildElement()`, and `childElements()`
+- parse, file-input, and stream-input exceptions with library-specific messages
+- examples and tests for realistic reader workflows alongside the existing writer coverage
 
 ## Current Direction
 
-The package remains intentionally writer-focused. Near-term work should improve
-writer ergonomics, correctness, performance visibility, and documentation
-quality without expanding into unrelated XML features.
+The package remains intentionally writer-focused with a small complementary
+reader API. Near-term work should improve writer ergonomics, reader clarity,
+correctness, performance visibility, and documentation quality without
+expanding into unrelated XML features.
 
 ## Out Of Scope
 
 The roadmap still excludes:
 
-- parsing
 - XPath
 - XSD validation
-- reader/query APIs
+- mutation APIs for loaded XML
+- XML-to-array or XML-to-object mapping
+- broad reader/query APIs beyond the current traversal surface
 - general-purpose XML tooling outside writing

@@ -1,9 +1,10 @@
 {
     "name": "kalle/xml",
-    "description": "A strict, writer-focused XML library for PHP with document-model and streaming output",
+    "description": "A writer-focused XML library for PHP with document-model, streaming, and read-only reader APIs",
     "keywords": [
         "xml",
         "writer",
+        "reader",
         "streaming",
         "serialization",
         "php"
@@ -11,10 +12,11 @@
     "type": "library",
     "license": "MIT",
     "require": {
-        "php": "^8.2"
+        "php": "^8.2",
+        "ext-dom": "*",
+        "ext-libxml": "*"
     },
     "require-dev": {
-        "ext-dom": "*",
         "friendsofphp/php-cs-fixer": "^3.80",
         "phpstan/phpstan": "^2.1",
         "phpunit/phpunit": "^11.5"
