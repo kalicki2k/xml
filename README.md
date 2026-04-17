@@ -1,7 +1,8 @@
 # kalle/xml
 
-`kalle/xml` is a strict XML library for PHP 8.2+ with two writer APIs and a
-small read-only reader.
+`kalle/xml` is a strict XML library for PHP 8.2+ with tree-based writing,
+streaming writing, read-only XML reading, and a small namespace-aware
+XPath-style query layer on top of the reader API.
 
 It currently provides:
 
@@ -9,10 +10,13 @@ It currently provides:
 - `StreamingXmlWriter` for incremental output to strings, files, and streams
 - `XmlReader` for loading and traversing existing XML through a compact
   read-only API
+- `findAll()` and `findFirst()` on `ReaderDocument` and `ReaderElement` for
+  small namespace-aware queries
 
 The package stays intentionally narrow in scope: XML writing, namespaces,
-escaping, validation, and small-scale read-only traversal. It does not try to
-become a full parser or query framework.
+escaping, validation, small-scale read-only traversal, and small-scale
+namespace-aware querying. It does not try to become a full parser, DOM clone,
+or broad query framework.
 
 ## Why kalle/xml
 
@@ -24,6 +28,7 @@ become a full parser or query framework.
 - string, file, and stream output through the same writer path
 - `StreamingXmlWriter` for large or incremental output scenarios
 - `XmlReader` for namespace-aware loading from strings, files, and streams
+- small XPath-style queries layered on top of the read-only reader model
 
 ## Installation
 
@@ -35,8 +40,8 @@ Runtime requirements: `ext-dom` and `ext-libxml`.
 
 Optional benchmark comparisons use `ext-xmlwriter`.
 
-See `examples/` for runnable scripts covering `Xml`, `StreamingXmlWriter`, and
-`XmlReader`.
+See `examples/` for runnable scripts covering `Xml`, `StreamingXmlWriter`,
+`XmlReader`, and reader queries.
 
 ## Choosing an API
 
@@ -45,12 +50,16 @@ See `examples/` for runnable scripts covering `Xml`, `StreamingXmlWriter`, and
 - Use `StreamingXmlWriter` when output is generated incrementally, documents
   are large, or you want to write directly to a file path or PHP stream
   without retaining the full tree in memory.
-- Use `XmlReader` when you want to inspect existing XML through a small,
-  namespace-aware, read-only traversal API.
+- Use `XmlReader` traversal when you want to inspect existing XML through a
+  small, namespace-aware, read-only API with explicit element and attribute
+  access.
+- Use reader queries when filtered descendant lookups or namespace-aware
+  selections are clearer than chaining repeated `firstChildElement()` calls.
 
 `Xml` and `StreamingXmlWriter` share the same XML rules around escaping,
-namespace handling, and writer configuration. `XmlReader` stays separate and
-does not turn the package into a query framework.
+namespace handling, and writer configuration. `XmlReader` stays separate, and
+its query layer remains intentionally small rather than exposing the broader
+DOM/XPath surface.
 
 ## Document Model Quick Start
 
@@ -173,13 +182,45 @@ Reader notes:
 
 - `fromString()`, `fromFile()`, and `fromStream()` keep loading separate from the writer APIs
 - `rootElement()`, `firstChildElement()`, `childElements()`, `attributeValue()`, and `text()` cover the common inspection path
+- `findAll()` and `findFirst()` add a small XPath-style query layer on top of the read-only model
 - element and attribute lookups use the same `QualifiedName` model as the writer side
+- in-scope prefixed namespaces are available to queries automatically; default namespaces still need an explicit query alias because XPath does not apply default namespaces automatically
 - namespaces in scope are exposed separately from regular attributes
-- the reader stays intentionally small and does not include XPath or broad query helpers
+- the reader stays intentionally small and does not expose the full DOM/XPath surface
 
 See `examples/reading-catalog.php`, `examples/reading-config.php`,
-`examples/reading-feed.php`, and `examples/reading-stream.php` for runnable
+`examples/reading-feed.php`, `examples/reading-stream.php`,
+`examples/query-feed.php`, and `examples/query-invoice.php` for runnable
 reader examples.
+
+## Reader Query Quick Start
+
+Use the query layer when traversal by repeated `firstChildElement()` calls
+starts getting noisy or when you need filtered descendant lookups.
+
+```php
+<?php
+
+declare(strict_types=1);
+
+use Kalle\Xml\Reader\XmlReader;
+
+$document = XmlReader::fromString(
+    '<feed xmlns="urn:feed" xmlns:xlink="urn:xlink"><entry xlink:href="https://example.com/items/1"><title>Blue mug</title></entry></feed>',
+);
+
+$namespaces = [
+    'feed' => 'urn:feed',
+    'xlink' => 'urn:xlink',
+];
+
+$entries = $document->findAll('/feed:feed/feed:entry[@xlink:href]', $namespaces);
+$entry = $entries[0] ?? null;
+
+if ($entry !== null) {
+    echo $entry->findFirst('./feed:title', $namespaces)?->text() . "\n";
+}
+```
 
 ## Namespace-Aware API
 
@@ -343,21 +384,21 @@ Included today:
 - file and stream output with library-specific write exceptions
 - imperative streaming XML writing for writer-heavy workloads
 - read-only document and element traversal via `XmlReader`
+- a small XPath-style query layer on top of the reader model
 
 Not included:
 
-- XPath
+- mutation APIs for queried or loaded XML
 - XSD validation
-- mutation APIs for reader-side documents
-- broad query APIs
+- broad DOM/XPath wrapper APIs or a custom query engine
 - XML-to-array or XML-to-object mapping
 - streaming parser APIs
 
 ## Status
 
-v1.2 extends the writer foundation with a small, separate, read-only XML
-reader. The package remains ready for early public use as a focused XML tool,
-but its scope is still intentionally narrow. Near-term releases should keep
-refining the writer and reader surfaces rather than expanding into XPath,
-mapping, or broad query features. See `docs/roadmap.md` for the current
+v1.3 extends the read-only reader with a small namespace-aware query layer.
+The package remains ready for early public use as a focused XML tool, but its
+scope is still intentionally narrow. Near-term releases should keep refining
+the writer, reader, and query surfaces rather than expanding into mutation,
+mapping, or broad XML frameworks. See `docs/roadmap.md` for the current
 milestone summary.

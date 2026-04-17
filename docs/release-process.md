@@ -27,6 +27,7 @@ Use the smoke checks that match the release surface:
 
 ```bash
 php examples/catalog.php > /tmp/kalle-example-catalog.xml
+php examples/query-feed.php
 php examples/reading-catalog.php
 php examples/reading-config.php
 php examples/reading-feed.php

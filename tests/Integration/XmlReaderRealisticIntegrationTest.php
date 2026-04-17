@@ -44,6 +44,21 @@ final class XmlReaderRealisticIntegrationTest extends TestCase
         self::assertSame('false', $secondBook->attributeValue('available'));
     }
 
+    public function testItQueriesAWriterGeneratedCatalogFixtureWithNestedAttributeFilters(): void
+    {
+        $document = $this->readWriterDocument($this->createCatalogExampleDocument());
+
+        $availableBook = $document->findFirst('/catalog/book[@available="true"]');
+        $prices = $document->findAll('/catalog/book/price[@currency="EUR"]');
+
+        self::assertNotNull($availableBook);
+        self::assertSame('9780132350884', $availableBook->attributeValue('isbn'));
+        self::assertSame('Clean Code', $availableBook->findFirst('./title')?->text());
+        self::assertCount(2, $prices);
+        self::assertSame('39.90', $prices[0]->text());
+        self::assertSame('54.90', $prices[1]->text());
+    }
+
     public function testItReadsAWriterGeneratedConfigFixtureWithNestedSectionsAndTextValues(): void
     {
         $document = $this->readWriterDocument($this->createConfigDocument());
@@ -65,6 +80,21 @@ final class XmlReaderRealisticIntegrationTest extends TestCase
         self::assertSame('search', $searchFeature->attributeValue('name'));
         self::assertSame('true', $searchFeature->attributeValue('enabled'));
         self::assertSame('Global Search', $searchFeature->firstChildElement('label')?->text());
+    }
+
+    public function testItQueriesAWriterGeneratedConfigFixtureWithMixedAttributesAndChildElements(): void
+    {
+        $document = $this->readWriterDocument($this->createConfigDocument());
+
+        $database = $document->findFirst('/config/database[@driver="pgsql" and @primary="true"]');
+        $searchFeature = $document->findFirst('/config/feature[@name="search"]');
+
+        self::assertNotNull($database);
+        self::assertSame('db.internal', $database->findFirst('./host')?->text());
+        self::assertSame('application', $database->findFirst('./schema')?->text());
+        self::assertNotNull($searchFeature);
+        self::assertSame('Global Search', $searchFeature->findFirst('./label')?->text());
+        self::assertCount(2, $document->findAll('/config/feature/label'));
     }
 
     public function testItReadsAWriterGeneratedDefaultNamespaceFeedFixture(): void
@@ -102,6 +132,33 @@ final class XmlReaderRealisticIntegrationTest extends TestCase
         );
     }
 
+    public function testItQueriesAWriterGeneratedDefaultNamespaceFeedFixtureWithAliases(): void
+    {
+        $document = $this->readWriterDocument($this->createDefaultNamespaceFeedDocument());
+        $namespaces = [
+            'feed' => self::FEED_NS,
+            'dc' => self::DC_NS,
+            'media' => self::MEDIA_NS,
+            'xlink' => self::XLINK_NS,
+        ];
+
+        $entries = $document->findAll('/feed:feed/feed:entry[@xlink:href]', $namespaces);
+
+        self::assertCount(2, $entries);
+
+        $firstEntry = $entries[0];
+        $thumbnail = $firstEntry->findFirst('./media:thumbnail[@width="320"]', $namespaces);
+
+        self::assertSame('Blue mug', $firstEntry->findFirst('./feed:title', $namespaces)?->text());
+        self::assertSame('item-1001', $firstEntry->findFirst('./dc:identifier', $namespaces)?->text());
+        self::assertNotNull($thumbnail);
+        self::assertSame('180', $thumbnail->attributeValue('height'));
+        self::assertSame(
+            'https://cdn.example.com/products/item-1001.jpg',
+            $thumbnail->attributeValue(Xml::qname('href', self::XLINK_NS, 'xlink')),
+        );
+    }
+
     public function testItReadsAWriterGeneratedPrefixedNamespaceFeedFixture(): void
     {
         $document = $this->readWriterDocument($this->createPrefixedFeedExampleDocument());
@@ -119,6 +176,31 @@ final class XmlReaderRealisticIntegrationTest extends TestCase
             'https://example.com/items/1',
             $entry->attributeValue(Xml::qname('href', self::XLINK_NS, 'link')),
         );
+    }
+
+    public function testItSupportsElementScopedNamespaceQueriesOnAWriterGeneratedInvoiceFixture(): void
+    {
+        $document = $this->readWriterDocument($this->createInvoiceDocument());
+        $namespaces = [
+            'inv' => self::UBL_INVOICE_NS,
+            'cac' => self::UBL_CAC_NS,
+            'cbc' => self::UBL_CBC_NS,
+        ];
+
+        $supplierParty = $document->findFirst(
+            '/inv:Invoice/cac:AccountingSupplierParty/cac:Party',
+            $namespaces,
+        );
+
+        self::assertNotNull($supplierParty);
+
+        $endpoint = $supplierParty->findFirst('./cbc:EndpointID[@schemeID="0088"]');
+        $supplierName = $supplierParty->findFirst('./cac:PartyName/cbc:Name');
+
+        self::assertNotNull($endpoint);
+        self::assertSame('0409876543210', $endpoint->text());
+        self::assertNotNull($supplierName);
+        self::assertSame('Muster Software GmbH', $supplierName->text());
     }
 
     public function testItReadsAWriterGeneratedInvoiceFixtureAndExtractsRealisticText(): void

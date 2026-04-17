@@ -5,16 +5,10 @@ declare(strict_types=1);
 namespace Kalle\Xml\Reader;
 
 use DOMAttr;
-use DOMDocument;
 use DOMElement;
-use DOMXPath;
 use Kalle\Xml\Attribute\Attribute;
 use Kalle\Xml\Name\QualifiedName;
 use Kalle\Xml\Namespace\NamespaceDeclaration;
-
-use function ksort;
-use function str_starts_with;
-use function substr;
 
 final readonly class ReaderElement
 {
@@ -146,56 +140,7 @@ final readonly class ReaderElement
      */
     public function namespacesInScope(): array
     {
-        $document = $this->element->ownerDocument;
-
-        if (!$document instanceof DOMDocument) {
-            return [];
-        }
-
-        $xpath = new DOMXPath($document);
-        $namespaceNodes = $xpath->query('namespace::*', $this->element);
-
-        if ($namespaceNodes === false) {
-            return [];
-        }
-
-        $declarations = [];
-
-        foreach ($namespaceNodes as $namespaceNode) {
-            $nodeName = $namespaceNode->nodeName;
-
-            if ($nodeName === 'xmlns') {
-                $prefix = null;
-            } elseif (str_starts_with($nodeName, 'xmlns:')) {
-                $prefix = substr($nodeName, 6);
-            } else {
-                continue;
-            }
-
-            if ($prefix === 'xml' && $namespaceNode->nodeValue === QualifiedName::XML_NAMESPACE_URI) {
-                continue;
-            }
-
-            $declaration = new NamespaceDeclaration($prefix, $namespaceNode->nodeValue ?? '');
-
-            $declarations[$declaration->prefixKey()] = $declaration;
-        }
-
-        $defaultDeclaration = $declarations[''] ?? null;
-        unset($declarations['']);
-        ksort($declarations);
-
-        $sorted = [];
-
-        if ($defaultDeclaration !== null) {
-            $sorted[] = $defaultDeclaration;
-        }
-
-        foreach ($declarations as $declaration) {
-            $sorted[] = $declaration;
-        }
-
-        return $sorted;
+        return DomNamespaceInspector::namespacesInScope($this->element);
     }
 
     public function hasAttribute(string|QualifiedName $name): bool
@@ -226,6 +171,24 @@ final readonly class ReaderElement
     public function attributeValue(string|QualifiedName $name): ?string
     {
         return $this->attribute($name)?->value();
+    }
+
+    /**
+     * @param array<string, string> $namespaces
+     *
+     * @return list<self>
+     */
+    public function findAll(string $expression, array $namespaces = []): array
+    {
+        return XPathQuery::forElement($this->element)->findAll($expression, $namespaces);
+    }
+
+    /**
+     * @param array<string, string> $namespaces
+     */
+    public function findFirst(string $expression, array $namespaces = []): ?self
+    {
+        return XPathQuery::forElement($this->element)->findFirst($expression, $namespaces);
     }
 
     private static function qualifiedNameFromElement(DOMElement $element): QualifiedName
