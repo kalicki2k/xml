@@ -1,8 +1,8 @@
 # kalle/xml
 
 `kalle/xml` is a strict XML library for PHP 8.2+ with tree-based writing,
-streaming writing, read-only XML reading, and a small namespace-aware
-XPath-style query layer on top of the reader API.
+streaming writing, read-only XML reading, a small namespace-aware
+XPath-style query layer on top of the reader API, and compact XSD validation.
 
 It currently provides:
 
@@ -12,11 +12,13 @@ It currently provides:
   read-only API
 - `findAll()` and `findFirst()` on `ReaderDocument` and `ReaderElement` for
   small namespace-aware element queries
+- `XmlValidator` for validating XML strings, files, streams, and `XmlDocument`
+  instances against XSD schemas
 
 The package stays intentionally narrow in scope: XML writing, namespaces,
-escaping, validation, small-scale read-only traversal, and small-scale
+escaping, XSD validation, small-scale read-only traversal, and small-scale
 namespace-aware querying. It does not try to become a full parser, DOM clone,
-or broad query framework.
+or broad schema/query framework.
 
 ## Why kalle/xml
 
@@ -29,6 +31,8 @@ or broad query framework.
 - `StreamingXmlWriter` for large or incremental output scenarios
 - `XmlReader` for namespace-aware loading from strings, files, and streams
 - small XPath-style queries layered on top of the read-only reader model
+- `XmlValidator` for compact, explicit schema validation with useful
+  diagnostics
 
 ## Installation
 
@@ -41,7 +45,7 @@ Runtime requirements: `ext-dom` and `ext-libxml`.
 Optional benchmark comparisons use `ext-xmlwriter`.
 
 See `examples/` for runnable scripts covering `Xml`, `StreamingXmlWriter`,
-`XmlReader`, and reader queries.
+`XmlReader`, reader queries, and XSD validation.
 
 ## Choosing an API
 
@@ -56,11 +60,15 @@ See `examples/` for runnable scripts covering `Xml`, `StreamingXmlWriter`,
 - Use reader queries when filtered descendant lookups or namespace-aware
   element selections are clearer than chaining repeated `firstChildElement()`
   calls.
+- Use `XmlValidator` when XML well-formedness alone is not enough and you want
+  explicit XSD validation against schema strings, schema files, schema
+  streams, or existing `XmlDocument` instances.
 
 `Xml` and `StreamingXmlWriter` share the same XML rules around escaping,
 namespace handling, and writer configuration. `XmlReader` stays separate, and
 its query layer remains intentionally small rather than exposing the broader
-DOM/XPath surface.
+DOM/XPath surface. `XmlValidator` is a separate capability again, so schema
+validation does not blur writing, reading, and querying together.
 
 ## Document Model Quick Start
 
@@ -228,6 +236,69 @@ if ($entry !== null) {
 }
 ```
 
+## XSD Validation Quick Start
+
+Use `XmlValidator` when you want explicit schema validation with a compact
+result object instead of broad schema tooling.
+
+```php
+<?php
+
+declare(strict_types=1);
+
+use Kalle\Xml\Builder\Xml;
+use Kalle\Xml\Validation\XmlValidator;
+
+$validator = XmlValidator::fromString(
+    <<<'XSD'
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xs:element name="catalog">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="book" maxOccurs="unbounded">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="title" type="xs:string"/>
+                        </xs:sequence>
+                        <xs:attribute name="isbn" type="xs:string" use="required"/>
+                    </xs:complexType>
+                </xs:element>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+</xs:schema>
+XSD,
+);
+
+$document = Xml::document(
+    Xml::element('catalog')
+        ->child(
+            Xml::element('book')
+                ->attribute('isbn', '9780132350884')
+                ->child(Xml::element('title')->text('Clean Code')),
+        ),
+);
+
+$result = $validator->validateXmlDocument($document);
+
+if ($result->isValid()) {
+    echo "valid\n";
+}
+```
+
+Validation notes:
+
+- `fromString()`, `fromFile()`, and `fromStream()` bind the validator to one XSD schema source
+- `validateString()`, `validateFile()`, `validateStream()`, and `validateXmlDocument()` all return `ValidationResult`
+- malformed XML still throws `ParseException`; unreadable inputs still throw file or stream exceptions
+- invalid or unreadable XSD schemas throw `InvalidSchemaException`
+- `validateXmlDocument()` lets you validate writer-built documents directly without manually serializing first
+- `fromFile()` keeps schema-file validation path-based, so relative `xs:include` and `xs:import` locations continue to work
+- invalid-but-well-formed XML returns `ValidationResult::isValid() === false` plus `ValidationError` diagnostics
+
+See `examples/validate-catalog.php` and `examples/validate-feed.php` for
+runnable validation examples.
+
 ## Namespace-Aware API
 
 The same namespace rules apply to the document model and to
@@ -316,7 +387,7 @@ Output:
 
 ## Validation and Errors
 
-The library rejects invalid XML early:
+The library rejects invalid XML and invalid XSD usage early:
 
 - invalid XML names
 - invalid XML 1.0 characters
@@ -324,9 +395,11 @@ The library rejects invalid XML early:
 - namespace declaration conflicts
 - unsupported declaration settings such as non-UTF-8 encodings
 - invalid streaming writer state transitions
+- malformed XML inputs passed to readers or validators
+- invalid or unreadable XSD schemas
 
 Exception messages are intentionally short and aimed at the call site, so
-invalid writer, reader, and query input is easy to diagnose.
+invalid writer, reader, query, and validation input is easy to diagnose.
 
 ## Key Repository Directories
 
@@ -341,12 +414,13 @@ src/
   Namespace/    Namespace declarations and scope handling
   Node/         Element and other writer node types
   Reader/       Read-only traversal plus small XPath-style reader queries
+  Validation/   XSD validation and validation result types
   Validate/     XML name validation
   Writer/       Streaming writer, output targets, namespace emission, and configuration
 tests/
   Unit/         Focused object and validation tests
-  Integration/  Document/streaming output, reader traversal, reader queries, stream/file output, and parser-backed checks
-examples/       Runnable examples such as catalog.php, query-feed.php, reading-catalog.php, and streaming-feed.php
+  Integration/  Document/streaming output, reader traversal, reader queries, XSD validation, stream/file output, and parser-backed checks
+examples/       Runnable examples such as catalog.php, query-feed.php, validate-catalog.php, validate-feed.php, and streaming-feed.php
 benchmarks/     Maintained performance comparison fixtures
 docs/           Maintainer-facing notes
 ```
@@ -391,20 +465,23 @@ Included today:
 - imperative streaming XML writing for writer-heavy workloads
 - read-only document and element traversal via `XmlReader`
 - a small XPath-style query layer on top of the reader model
+- XSD validation for XML strings, files, streams, and `XmlDocument`
 
 Still out of scope:
 
 - mutation APIs for queried or loaded XML
-- XSD validation
 - broad DOM/XPath wrapper APIs beyond `findFirst()` and `findAll()`
+- broad schema-framework features beyond compact XSD validation
 - XML-to-array or XML-to-object mapping
 - streaming parser APIs
 
 ## Status
 
-v1.3 extends the read-only reader with a small namespace-aware query layer.
-The package remains ready for early public use as a focused XML tool, but its
-scope is still intentionally narrow. Near-term releases should keep refining
-the writer, reader, and query surfaces rather than expanding into mutation,
-mapping, or broad XML frameworks. See `docs/roadmap.md` for the current
-milestone summary.
+v1.4 adds compact XSD validation as a separate capability alongside the
+existing writer, reader, and query APIs, including direct validation of
+writer-built `XmlDocument` instances and namespaced documents. The package
+remains ready for early public use as a focused XML tool, but its scope is
+still intentionally narrow. Near-term releases should keep refining the
+writer, reader, query, and validation surfaces rather than expanding into
+mutation, mapping, or broad XML frameworks. See `docs/roadmap.md` for the
+current milestone summary.
