@@ -35,6 +35,14 @@ final readonly class ReaderDocument
     }
 
     /**
+     * @internal Internal bridge for importer support on top of the reader model.
+     */
+    public function toDomDocument(): DOMDocument
+    {
+        return $this->document;
+    }
+
+    /**
      * @param array<string, string> $namespaces
      *
      * @return list<ReaderElement>

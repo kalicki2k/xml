@@ -2,7 +2,8 @@
 
 `kalle/xml` is a strict XML library for PHP 8.2+ with tree-based writing,
 streaming writing, read-only XML reading, a small namespace-aware
-XPath-style query layer on top of the reader API, and compact XSD validation.
+XPath-style query layer on top of the reader API, a compact reader-to-writer
+import bridge, and compact XSD validation.
 
 It currently provides:
 
@@ -12,13 +13,16 @@ It currently provides:
   read-only API
 - `findAll()` and `findFirst()` on `ReaderDocument` and `ReaderElement` for
   small namespace-aware element queries
+- `XmlImporter` for importing `ReaderDocument` and `ReaderElement` into the
+  immutable writer-side document model
 - `XmlValidator` for validating XML strings, files, streams, and `XmlDocument`
   instances against XSD schemas
 
 The package stays intentionally narrow in scope: XML writing, namespaces,
-escaping, XSD validation, small-scale read-only traversal, and small-scale
-namespace-aware querying. It does not try to become a full parser, DOM clone,
-or broad schema/query framework.
+escaping, XSD validation, small-scale read-only traversal, small-scale
+namespace-aware querying, and small-scale reader-to-writer import workflows. It
+does not try to become a full parser, DOM clone, or broad schema/query
+framework.
 
 ## Why kalle/xml
 
@@ -31,6 +35,7 @@ or broad schema/query framework.
 - `StreamingXmlWriter` for large or incremental output scenarios
 - `XmlReader` for namespace-aware loading from strings, files, and streams
 - small XPath-style queries layered on top of the read-only reader model
+- `XmlImporter` for practical query-to-write and traversal-to-write workflows
 - `XmlValidator` for compact, explicit schema validation with useful
   diagnostics
 
@@ -45,7 +50,7 @@ Runtime requirements: `ext-dom` and `ext-libxml`.
 Optional benchmark comparisons use `ext-xmlwriter`.
 
 See `examples/` for runnable scripts covering `Xml`, `StreamingXmlWriter`,
-`XmlReader`, reader queries, and XSD validation.
+`XmlReader`, reader queries, reader-to-writer import, and XSD validation.
 
 ## Choosing an API
 
@@ -60,15 +65,19 @@ See `examples/` for runnable scripts covering `Xml`, `StreamingXmlWriter`,
 - Use reader queries when filtered descendant lookups or namespace-aware
   element selections are clearer than chaining repeated `firstChildElement()`
   calls.
+- Use `XmlImporter` when you want to take reader or query results back into
+  the immutable writer model for rewriting, filtering, or re-serialization.
 - Use `XmlValidator` when XML well-formedness alone is not enough and you want
   explicit XSD validation against schema strings, schema files, schema
   streams, or existing `XmlDocument` instances.
 
 `Xml` and `StreamingXmlWriter` share the same XML rules around escaping,
-namespace handling, and writer configuration. `XmlReader` stays separate, and
-its query layer remains intentionally small rather than exposing the broader
-DOM/XPath surface. `XmlValidator` is a separate capability again, so schema
-validation does not blur writing, reading, and querying together.
+namespace handling, and writer configuration. `XmlReader` stays separate, its
+query layer remains intentionally small rather than exposing the broader
+DOM/XPath surface, and `XmlImporter` bridges reader results back into the
+writer model without introducing mutation or DOM-clone behavior.
+`XmlValidator` is a separate capability again, so schema validation does not
+blur writing, reading, querying, and importing together.
 
 ## Document Model Quick Start
 
@@ -200,8 +209,51 @@ Reader notes:
 
 See `examples/reading-catalog.php`, `examples/reading-config.php`,
 `examples/reading-feed.php`, `examples/reading-stream.php`,
-`examples/query-feed.php`, and `examples/query-invoice.php` for runnable
-reader and query examples.
+`examples/query-feed.php`, `examples/query-invoice.php`,
+`examples/import-feed-entry.php`, and `examples/import-invoice-party.php`
+for runnable reader, query, and import examples.
+
+## Reader-To-Writer Import Quick Start
+
+Use `XmlImporter` when a loaded or queried reader subtree should move back
+into the immutable writer model.
+
+```php
+<?php
+
+declare(strict_types=1);
+
+use Kalle\Xml\Builder\Xml;
+use Kalle\Xml\Import\XmlImporter;
+use Kalle\Xml\Reader\XmlReader;
+
+$document = XmlReader::fromString(
+    '<feed xmlns="urn:feed"><entry sku="item-1002"><title>Notebook set</title></entry></feed>',
+);
+
+$entry = $document->findFirst('/feed:feed/feed:entry[@sku="item-1002"]', [
+    'feed' => 'urn:feed',
+]);
+
+if ($entry !== null) {
+    $writerElement = XmlImporter::element($entry)->attribute('exported', true);
+
+    echo Xml::document($writerElement)->withoutDeclaration()->toString() . "\n";
+}
+```
+
+Import notes:
+
+- `document()` converts a `ReaderDocument` into `XmlDocument`
+- `element()` converts a `ReaderElement` subtree into a writer-side `Element`
+- imported results are regular immutable writer-side `XmlDocument` and `Element` instances, so they work with `Xml`, `StreamingXmlWriter`, and `XmlValidator`
+- element names, attributes, text, comments, CDATA, and processing instructions are preserved through the import bridge
+- root-level namespace declarations are rebuilt from the imported subtree so namespace-aware query-to-write workflows stay correct
+- imported elements can be routed either into `Xml::document(...)` or straight into `StreamingXmlWriter::writeElement(...)`
+- import stays intentionally small; unsupported constructs such as DOCTYPE-backed document import or entity references raise `ImportException`
+
+See `examples/import-feed-entry.php` and `examples/import-invoice-party.php`
+for runnable import workflows.
 
 ## Reader Query Quick Start
 
@@ -410,6 +462,7 @@ src/
   Document/     XmlDocument and XmlDeclaration
   Escape/       Escaping and character validation
   Exception/    Library-specific exception types
+  Import/       Reader-to-writer import bridge
   Name/         QualifiedName value object
   Namespace/    Namespace declarations and scope handling
   Node/         Element and other writer node types
@@ -419,8 +472,8 @@ src/
   Writer/       Streaming writer, output targets, namespace emission, and configuration
 tests/
   Unit/         Focused object and validation tests
-  Integration/  Document/streaming output, reader traversal, reader queries, XSD validation, stream/file output, and parser-backed checks
-examples/       Runnable examples such as catalog.php, query-feed.php, validate-catalog.php, validate-feed.php, and streaming-feed.php
+  Integration/  Document/streaming output, reader traversal, reader queries, reader import, XSD validation, stream/file output, and parser-backed checks
+examples/       Runnable examples such as catalog.php, query-feed.php, import-feed-entry.php, import-invoice-party.php, validate-catalog.php, validate-feed.php, and streaming-feed.php
 benchmarks/     Maintained performance comparison fixtures
 docs/           Maintainer-facing notes
 ```
@@ -465,6 +518,7 @@ Included today:
 - imperative streaming XML writing for writer-heavy workloads
 - read-only document and element traversal via `XmlReader`
 - a small XPath-style query layer on top of the reader model
+- reader-to-writer import via `XmlImporter`
 - XSD validation for XML strings, files, streams, and `XmlDocument`
 
 Still out of scope:
@@ -477,11 +531,10 @@ Still out of scope:
 
 ## Status
 
-v1.4 adds compact XSD validation as a separate capability alongside the
-existing writer, reader, and query APIs, including direct validation of
-writer-built `XmlDocument` instances and namespaced documents. The package
-remains ready for early public use as a focused XML tool, but its scope is
-still intentionally narrow. Near-term releases should keep refining the
-writer, reader, query, and validation surfaces rather than expanding into
-mutation, mapping, or broad XML frameworks. See `docs/roadmap.md` for the
-current milestone summary.
+v1.5 adds a compact reader-to-writer import bridge alongside the existing
+writer, reader, query, and validation APIs. The package remains ready for
+early public use as a focused XML tool, but its scope is still intentionally
+narrow. Near-term releases should keep refining the writer, reader, query,
+import, and validation surfaces rather than expanding into mutation, mapping,
+or broad XML frameworks. See `docs/roadmap.md` for the current milestone
+summary.

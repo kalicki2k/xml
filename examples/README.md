@@ -1,10 +1,12 @@
 # Examples
 
-Runnable examples for the public writer, reader, query, and validation APIs:
+Runnable examples for the public writer, reader, query, import, and validation APIs:
 
 - `catalog.php` uses the document model for a small pretty-printed catalog
 - `query-feed.php` runs a minimal namespace-aware reader query against a feed document and shows how to alias a default namespace for XPath-style queries
 - `query-invoice.php` runs document-scoped and element-scoped element queries against a namespace-heavy invoice document
+- `import-feed-entry.php` queries a feed entry and imports it into a regular writer-side document for output
+- `import-invoice-party.php` queries an invoice subtree and streams the imported writer-side element through `StreamingXmlWriter`
 - `reading-catalog.php` loads XML from a string and traverses it read-only
 - `reading-config.php` loads a config-like XML document from a string
 - `reading-feed.php` loads namespace-aware XML from a file and reads prefixed attributes
@@ -22,6 +24,8 @@ Run them from the repository root after `composer install`:
 php examples/catalog.php
 php examples/query-feed.php
 php examples/query-invoice.php
+php examples/import-feed-entry.php
+php examples/import-invoice-party.php
 php examples/reading-catalog.php
 php examples/reading-config.php
 php examples/reading-feed.php

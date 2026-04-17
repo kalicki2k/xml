@@ -35,6 +35,14 @@ final readonly class ReaderElement
         return $this->qualifiedName;
     }
 
+    /**
+     * @internal Internal bridge for importer support on top of the reader model.
+     */
+    public function toDomElement(): DOMElement
+    {
+        return $this->element;
+    }
+
     public function localName(): string
     {
         return $this->qualifiedName->localName();

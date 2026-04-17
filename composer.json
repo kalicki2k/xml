@@ -1,12 +1,13 @@
 {
     "name": "kalle/xml",
-    "description": "A compact XML library for PHP with document and streaming writers, a read-only reader, small XPath-style reader queries, and XSD validation",
+    "description": "A compact XML library for PHP with document and streaming writers, a read-only reader, small XPath-style reader queries, a reader-to-writer import bridge, and XSD validation",
     "keywords": [
         "xml",
         "writer",
         "reader",
         "query",
         "xpath",
+        "import",
         "validation",
         "xsd",
         "streaming",
@@ -45,6 +46,13 @@
             "@stan",
             "@cs-check"
         ]
+    },
+    "scripts-descriptions": {
+        "test": "Run the full test suite.",
+        "stan": "Run static analysis with PHPStan.",
+        "cs-check": "Check coding standards with PHP CS Fixer.",
+        "cs-fix": "Automatically fix coding standards with PHP CS Fixer.",
+        "qa": "Run the full QA suite."
     },
     "config": {
         "sort-packages": true
