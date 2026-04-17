@@ -31,6 +31,10 @@ become a full parser or query framework.
 composer require kalle/xml
 ```
 
+Runtime requirements: `ext-dom` and `ext-libxml`.
+
+Optional benchmark comparisons use `ext-xmlwriter`.
+
 See `examples/` for runnable scripts covering `Xml`, `StreamingXmlWriter`, and
 `XmlReader`.
 
@@ -316,8 +320,14 @@ Benchmarking:
 
 ```bash
 php benchmarks/write-performance.php
+php benchmarks/write-performance.php medium
 php benchmarks/write-performance.php namespace-heavy 25
+php benchmarks/write-performance.php 50
+php benchmarks/document-vs-streaming.php 5000 15
 ```
+
+See `benchmarks/README.md` for the measured implementations, interpretation
+guidance, and benchmark limitations.
 
 The integration suite uses `DOMDocument` to verify that writer output is
 well-formed, not just string snapshots.

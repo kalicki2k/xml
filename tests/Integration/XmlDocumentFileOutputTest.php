@@ -82,6 +82,14 @@ final class XmlDocumentFileOutputTest extends TestCase
         Xml::document(Xml::element('catalog'))->saveToFile('', WriterConfig::compact());
     }
 
+    public function testItRaisesALibrarySpecificExceptionForPathsContainingNullBytes(): void
+    {
+        $this->expectException(FileWriteException::class);
+        $this->expectExceptionMessage('null bytes');
+
+        Xml::document(Xml::element('catalog'))->saveToFile("\0invalid.xml", WriterConfig::compact());
+    }
+
     public function testItRaisesALibrarySpecificExceptionWhenTheTargetDirectoryDoesNotExist(): void
     {
         $path = sys_get_temp_dir() . '/kalle-xml-missing-' . bin2hex(random_bytes(6)) . '/document.xml';

@@ -77,21 +77,18 @@ function createScenarios(): array
 {
     return [
         'small' => createCatalogScenario(
-            key: 'small',
             label: 'Small document',
             description: '5 book entries with attributes and nested text elements.',
             itemCount: 5,
             iterations: 1000,
         ),
         'medium' => createCatalogScenario(
-            key: 'medium',
             label: 'Medium document',
             description: '250 book entries with repeated, realistically nested structure.',
             itemCount: 250,
             iterations: 150,
         ),
         'large' => createCatalogScenario(
-            key: 'large',
             label: 'Large document',
             description: '2500 book entries for broader throughput and memory trends.',
             itemCount: 2500,
@@ -114,7 +111,6 @@ function createScenarios(): array
  * }
  */
 function createCatalogScenario(
-    string $key,
     string $label,
     string $description,
     int $itemCount,
@@ -129,7 +125,7 @@ function createCatalogScenario(
         'expected_xml' => static function () use ($itemCount, $config): string {
             return buildCatalogDocument($itemCount)->toString($config);
         },
-        'implementations' => static function () use ($itemCount, $config, $key): array {
+        'implementations' => static function () use ($itemCount, $config): array {
             $implementations = [
                 'kalle/xml document model' => static function () use ($itemCount, $config): string {
                     return buildCatalogDocument($itemCount)->toString($config);

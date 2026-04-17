@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Kalle\Xml\Writer;
 
+use Closure;
 use Kalle\Xml\Exception\FileWriteException;
 use Kalle\Xml\Exception\SerializationException;
 use Kalle\Xml\Exception\StreamWriteException;
+use ValueError;
 
 use function fclose;
 use function fopen;
@@ -52,19 +54,7 @@ final class StreamXmlOutput implements XmlOutput
             throw new FileWriteException('Cannot write XML to an empty path.');
         }
 
-        $openError = null;
-
-        set_error_handler(static function (int $severity, string $message) use (&$openError): bool {
-            $openError = $message;
-
-            return true;
-        });
-
-        try {
-            $stream = fopen($path, 'wb');
-        } finally {
-            restore_error_handler();
-        }
+        [$stream, $openError] = self::captureIo(static fn () => fopen($path, 'wb'));
 
         if ($stream === false) {
             $message = sprintf('Failed to write XML to file "%s".', $path);
@@ -119,19 +109,9 @@ final class StreamXmlOutput implements XmlOutput
         $bytesWrittenTotal = 0;
 
         while ($remaining !== '') {
-            $writeError = null;
-
-            set_error_handler(static function (int $severity, string $message) use (&$writeError): bool {
-                $writeError = $message;
-
-                return true;
-            });
-
-            try {
-                $bytesWritten = fwrite($this->stream, $remaining);
-            } finally {
-                restore_error_handler();
-            }
+            [$bytesWritten, $writeError] = self::captureIo(
+                fn () => fwrite($this->stream, $remaining),
+            );
 
             if ($bytesWritten === false) {
                 $message = sprintf('Failed to write XML to %s.', $this->targetLabel);
@@ -175,19 +155,7 @@ final class StreamXmlOutput implements XmlOutput
             return;
         }
 
-        $closeError = null;
-
-        set_error_handler(static function (int $severity, string $message) use (&$closeError): bool {
-            $closeError = $message;
-
-            return true;
-        });
-
-        try {
-            $closed = fclose($this->stream);
-        } finally {
-            restore_error_handler();
-        }
+        [$closed, $closeError] = self::captureIo(fn () => fclose($this->stream));
 
         if ($closed !== false) {
             return;
@@ -225,6 +193,35 @@ final class StreamXmlOutput implements XmlOutput
         $metadata = stream_get_meta_data($stream);
 
         return preg_match('/[waxc+]/', $metadata['mode']) === 1;
+    }
+
+    /**
+     * @template TResult
+     *
+     * @param Closure(): TResult $operation
+     *
+     * @return array{0: TResult|false, 1: ?string}
+     */
+    private static function captureIo(Closure $operation): array
+    {
+        $error = null;
+
+        set_error_handler(static function (int $severity, string $message) use (&$error): bool {
+            $error = $message;
+
+            return true;
+        });
+
+        try {
+            $result = $operation();
+        } catch (ValueError $exception) {
+            $result = false;
+            $error = $exception->getMessage();
+        } finally {
+            restore_error_handler();
+        }
+
+        return [$result, $error];
     }
 
     private function throwWriteException(string $message): never

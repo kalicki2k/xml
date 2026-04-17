@@ -7,7 +7,7 @@ marketing material.
 
 The main suite, `write-performance.php`, measures end-to-end XML writing for:
 
-- `kalle/xml` through the immutable document model
+- `kalle/xml` through the `Xml` document model
 - `StreamingXmlWriter`
 - `DOMDocument`, when `ext-dom` is available
 - `XMLWriter`, when `ext-xmlwriter` is available
@@ -56,7 +56,7 @@ php benchmarks/document-vs-streaming.php 5000 15
 The suite deliberately measures the practical write path of each API rather
 than an isolated micro-operation. In practice that means:
 
-- the `kalle/xml` document model includes document construction plus output
+- the `Xml` document model includes document construction plus output
 - `StreamingXmlWriter` and `XMLWriter` write incrementally
 - `DOMDocument` includes DOM construction plus `saveXML()`
 

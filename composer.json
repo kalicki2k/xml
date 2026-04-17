@@ -1,12 +1,12 @@
 {
     "name": "kalle/xml",
-    "description": "A writer-focused XML library for PHP with document-model, streaming, and read-only reader APIs",
+    "description": "A focused XML library for PHP with document-model and streaming writers plus a read-only reader",
     "keywords": [
         "xml",
         "writer",
         "reader",
         "streaming",
-        "serialization",
+        "document-model",
         "php"
     ],
     "type": "library",
