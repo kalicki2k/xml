@@ -6,6 +6,7 @@ public README or the package runtime.
 Recommended content here:
 
 - roadmap and milestone status notes
+- release and QA checklists
 - release notes and release process details
 - architecture notes for document output and namespace behavior
 - compatibility decisions and XML edge-case references
@@ -20,6 +21,7 @@ Repository layout highlights:
 - `examples/` contains runnable example scripts
 - `benchmarks/` contains maintained performance comparison fixtures
 - `docs/roadmap.md` tracks the current writer-focused milestone status
+- `docs/releasing.md` captures the maintainer release workflow
 
 Keep public usage guidance in the top-level `README.md`. Use this directory for
 deeper notes that help maintainers evolve the library safely.

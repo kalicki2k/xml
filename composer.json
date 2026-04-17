@@ -1,11 +1,12 @@
 {
     "name": "kalle/xml",
-    "description": "A modern, strict, builder-first XML library for PHP",
+    "description": "A strict, writer-focused XML library for PHP with document-model and streaming output",
     "keywords": [
-        "builder",
-        "php",
-        "serializer",
-        "xml"
+        "xml",
+        "writer",
+        "streaming",
+        "serialization",
+        "php"
     ],
     "type": "library",
     "license": "MIT",

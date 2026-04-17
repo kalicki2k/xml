@@ -5,6 +5,7 @@ Runnable examples for the public writer APIs:
 - `catalog.php` uses the document model for a small pretty-printed catalog
 - `namespaced-feed.php` uses the document model with namespace-aware names
 - `streaming-catalog.php` streams a catalog export incrementally to `php://stdout`
+- `streaming-to-file.php` writes to a file path and mixes prebuilt subtrees into a stream
 - `streaming-feed.php` streams a namespace-aware feed incrementally to `php://stdout`
 
 Run them from the repository root after `composer install`:
@@ -13,5 +14,6 @@ Run them from the repository root after `composer install`:
 php examples/catalog.php
 php examples/namespaced-feed.php
 php examples/streaming-catalog.php
+php examples/streaming-to-file.php
 php examples/streaming-feed.php
 ```

@@ -19,9 +19,9 @@ $scenarios = createScenarios();
 
 echo "kalle/xml write benchmark suite\n";
 echo sprintf("PHP: %s\n", PHP_VERSION);
-echo "Messung: End-to-End-Schreiben pro Implementierung\n";
-echo "Speichermetrik: maximales Peak-Delta pro Iteration relativ zur Startbelegung\n";
-echo "Validierung: semantischer XML-Vergleich via DOM-C14N vor dem Timing\n\n";
+echo "Measurement: end-to-end writing per implementation\n";
+echo "Memory metric: maximum peak delta per iteration relative to the starting baseline\n";
+echo "Validation: semantic XML comparison via DOM C14N before timing\n\n";
 
 foreach ($selectedScenarioKeys as $scenarioKey) {
     $scenario = $scenarios[$scenarioKey];
@@ -31,7 +31,7 @@ foreach ($selectedScenarioKeys as $scenarioKey) {
     $implementations = $scenario['implementations']();
 
     echo sprintf(
-        "Szenario: %s\n%s\nIterationen: %d\nBytes (Baseline): %d\n\n",
+        "Scenario: %s\n%s\nIterations: %d\nBaseline bytes: %d\n\n",
         $scenario['label'],
         $scenario['description'],
         $iterations,
@@ -40,8 +40,8 @@ foreach ($selectedScenarioKeys as $scenarioKey) {
 
     echo sprintf(
         "%-28s %12s %12s %14s\n",
-        'Implementierung',
-        'Gesamt ms',
+        'Implementation',
+        'Total ms',
         'Avg ms',
         'Peak KiB',
     );
@@ -78,22 +78,22 @@ function createScenarios(): array
     return [
         'small' => createCatalogScenario(
             key: 'small',
-            label: 'Kleines Dokument',
-            description: '5 Bucheintraege mit Attributen und verschachtelten Textelementen.',
+            label: 'Small document',
+            description: '5 book entries with attributes and nested text elements.',
             itemCount: 5,
             iterations: 1000,
         ),
         'medium' => createCatalogScenario(
             key: 'medium',
-            label: 'Mittleres Dokument',
-            description: '250 Bucheintraege mit wiederholter, realistisch verschachtelter Struktur.',
+            label: 'Medium document',
+            description: '250 book entries with repeated, realistically nested structure.',
             itemCount: 250,
             iterations: 150,
         ),
         'large' => createCatalogScenario(
             key: 'large',
-            label: 'Grosses Dokument',
-            description: '2500 Bucheintraege fuer grobere Durchsatz- und Speichertrends.',
+            label: 'Large document',
+            description: '2500 book entries for broader throughput and memory trends.',
             itemCount: 2500,
             iterations: 20,
         ),
@@ -131,7 +131,7 @@ function createCatalogScenario(
         },
         'implementations' => static function () use ($itemCount, $config, $key): array {
             $implementations = [
-                'kalle/xml Baum-Modell' => static function () use ($itemCount, $config): string {
+                'kalle/xml document model' => static function () use ($itemCount, $config): string {
                     return buildCatalogDocument($itemCount)->toString($config);
                 },
                 'StreamingXmlWriter' => static function () use ($itemCount, $config): string {
@@ -174,15 +174,15 @@ function createNamespaceHeavyScenario(int $entryCount, int $iterations): array
     $config = WriterConfig::compact(emitDeclaration: false);
 
     return [
-        'label' => 'Namespace-lastiges Dokument',
-        'description' => '300 Feed-Eintraege mit Default- und Prefix-Namensraeumen sowie prefixed Attributes.',
+        'label' => 'Namespace-heavy document',
+        'description' => '300 feed entries with default and prefixed namespaces plus prefixed attributes.',
         'iterations' => $iterations,
         'expected_xml' => static function () use ($entryCount, $config): string {
             return buildNamespaceHeavyDocument($entryCount)->toString($config);
         },
         'implementations' => static function () use ($entryCount, $config): array {
             $implementations = [
-                'kalle/xml Baum-Modell' => static function () use ($entryCount, $config): string {
+                'kalle/xml document model' => static function () use ($entryCount, $config): string {
                     return buildNamespaceHeavyDocument($entryCount)->toString($config);
                 },
                 'StreamingXmlWriter' => static function () use ($entryCount, $config): string {
@@ -255,12 +255,12 @@ function printUsageAndExit(array $availableScenarioKeys): never
 
     fwrite(
         STDERR,
-        "Verwendung:\n"
+        "Usage:\n"
         . "  php benchmarks/write-performance.php\n"
-        . "  php benchmarks/write-performance.php <szenario>\n"
-        . "  php benchmarks/write-performance.php <szenario> <iterationen>\n"
-        . "  php benchmarks/write-performance.php <iterationen>\n\n"
-        . "Verfuegbare Szenarien: {$scenarioList}\n",
+        . "  php benchmarks/write-performance.php <scenario>\n"
+        . "  php benchmarks/write-performance.php <scenario> <iterations>\n"
+        . "  php benchmarks/write-performance.php <iterations>\n\n"
+        . "Available scenarios: {$scenarioList}\n",
     );
 
     exit(1);
@@ -603,7 +603,7 @@ function assertEquivalentXml(
 
     if ($actualCanonicalXml !== $expectedCanonicalXml) {
         throw new RuntimeException(sprintf(
-            'Die Implementierung "%s" erzeugte im Szenario "%s" semantisch abweichendes XML.',
+            'Implementation "%s" produced semantically different XML in scenario "%s".',
             $implementationLabel,
             $scenarioLabel,
         ));
@@ -611,7 +611,7 @@ function assertEquivalentXml(
 
     if ($expectedXml === '' || $actualXml === '') {
         throw new RuntimeException(sprintf(
-            'Die Implementierung "%s" erzeugte im Szenario "%s" leeres XML.',
+            'Implementation "%s" produced empty XML in scenario "%s".',
             $implementationLabel,
             $scenarioLabel,
         ));
@@ -637,10 +637,10 @@ function canonicalizeXml(string $xml): string
     }
 
     if ($loaded !== true) {
-        $message = 'DOMDocument konnte Benchmark-XML nicht laden.';
+        $message = 'DOMDocument failed to load benchmark XML.';
 
         if ($errors !== []) {
-            $message .= ' Erste Fehlermeldung: ' . trim((string) $errors[0]->message);
+            $message .= ' First libxml error: ' . trim((string) $errors[0]->message);
         }
 
         throw new RuntimeException($message);
@@ -649,7 +649,7 @@ function canonicalizeXml(string $xml): string
     $canonicalXml = $dom->C14N();
 
     if ($canonicalXml === false) {
-        throw new RuntimeException('DOMDocument konnte Benchmark-XML nicht kanonisieren.');
+        throw new RuntimeException('DOMDocument failed to canonicalize benchmark XML.');
     }
 
     return $canonicalXml;

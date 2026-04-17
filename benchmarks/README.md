@@ -1,35 +1,35 @@
 # Benchmarks
 
-Die Benchmark-Skripte in diesem Verzeichnis sind als praktische
-Entscheidungshilfe gedacht, nicht als Marketingmaterial.
+The scripts in this directory are meant as practical maintenance tools, not as
+marketing material.
 
-## Was gemessen wird
+## What Is Measured
 
-Die Hauptsuite `write-performance.php` misst End-to-End-Schreibvorgaenge fuer:
+The main suite, `write-performance.php`, measures end-to-end XML writing for:
 
-- `kalle/xml` ueber das Baum-/Dokumentmodell
+- `kalle/xml` through the immutable document model
 - `StreamingXmlWriter`
-- `DOMDocument`, falls `ext-dom` verfuegbar ist
-- `XMLWriter`, falls `ext-xmlwriter` verfuegbar ist
+- `DOMDocument`, when `ext-dom` is available
+- `XMLWriter`, when `ext-xmlwriter` is available
 
-Abgedeckte Szenarien:
+Covered scenarios:
 
-- kleines Dokument
-- mittleres Dokument
-- grosses Dokument
-- namespace-lastiges Dokument
+- small document writing
+- medium document writing
+- large document writing
+- namespace-heavy document writing
 
-Pro Implementierung werden zwei Werte erfasst:
+Each implementation reports:
 
-- Laufzeit: Gesamtzeit und Durchschnitt pro Iteration
-- Speicher: maximales Peak-Delta pro Iteration relativ zur Startbelegung
+- runtime: total time and average time per iteration
+- memory: maximum peak-memory delta per iteration relative to the starting baseline
 
-Zusatzlich gibt es mit `document-vs-streaming.php` weiterhin einen kleineren
-Fokus-Benchmark fuer die internen `kalle/xml`-Write-Pfade.
+`document-vs-streaming.php` remains as a smaller, focused benchmark for the two
+internal `kalle/xml` write paths.
 
-## Ausfuehrung
+## Running the Benchmarks
 
-Von der Repository-Wurzel aus:
+From the repository root:
 
 ```bash
 php benchmarks/write-performance.php
@@ -38,40 +38,40 @@ php benchmarks/write-performance.php namespace-heavy 25
 php benchmarks/write-performance.php 50
 ```
 
-Argumente fuer `write-performance.php`:
+Arguments for `write-performance.php`:
 
-- erstes Argument optional: Szenario (`small`, `medium`, `large`, `namespace-heavy`, `all`)
-- zweites Argument optional: Iterationen fuer alle ausgewaehlten Szenarien
-- wenn nur eine Zahl uebergeben wird, gilt sie als Iterations-Override fuer alle Szenarien
+- first argument optional: scenario (`small`, `medium`, `large`, `namespace-heavy`, `all`)
+- second argument optional: iteration override for the selected scenarios
+- if only a number is passed, it is treated as the iteration override for all scenarios
 
-Fokussierter Kalle-only-Vergleich:
+Focused `kalle/xml` comparison:
 
 ```bash
 php benchmarks/document-vs-streaming.php
 php benchmarks/document-vs-streaming.php 5000 15
 ```
 
-## Interpretation
+## How To Interpret Results
 
-Die Suite misst bewusst den praktischen Schreibpfad pro API, nicht eine
-isolierte Mikro-Operation im Vakuum. Das bedeutet:
+The suite deliberately measures the practical write path of each API rather
+than an isolated micro-operation. In practice that means:
 
-- das `kalle/xml`-Baummodell umfasst Dokumentaufbau plus Ausgabe
-- `StreamingXmlWriter` und `XMLWriter` schreiben inkrementell
-- `DOMDocument` umfasst DOM-Aufbau plus `saveXML()`
+- the `kalle/xml` document model includes document construction plus output
+- `StreamingXmlWriter` and `XMLWriter` write incrementally
+- `DOMDocument` includes DOM construction plus `saveXML()`
 
-Die Ergebnisse zeigen deshalb Nutzungsprofile und grobe Trends, keine absolute
-"Gewinnerbibliothek".
+The results therefore show usage profiles and broad trends, not an absolute
+"winner".
 
-Vor dem Timing wird jede Implementierung einmal semantisch gegen die Baseline
-geprueft. Damit benchmarken wir nicht versehentlich unterschiedliche XML-Daten.
+Before timing starts, each implementation is checked once against the semantic
+baseline. That keeps the suite from benchmarking accidentally different XML.
 
-## Grenzen des Setups
+## Limitations
 
-- CLI-Mikrobenchmarks sind empfindlich gegen CPU-Last, Turbo-Boost und Speicherzustand
-- es gibt keine Prozess-Isolation oder statistische Auswertung ueber mehrere separate Runs
-- Peak-Speicher ist nur eine praktische Naeherung, keine vollstaendige Heap-Analyse
-- DOM- und XMLWriter-Ergebnisse haengen von den installierten PHP-Extensions und der PHP-Version ab
-- reale Anwendungen koennen andere Hotspots haben, etwa I/O, Datenbeschaffung oder Objektaufbau ausserhalb des Writers
+- CLI microbenchmarks are sensitive to CPU load, turbo boost, and memory state
+- there is no process isolation or statistical analysis across separate runs
+- peak-memory reporting is a practical approximation, not a full heap analysis
+- `DOMDocument` and `XMLWriter` results depend on installed PHP extensions and the active PHP version
+- real applications may spend more time in I/O, data loading, or object construction outside the writer itself
 
-Keine generierten Reports oder einmaligen Profiling-Artefakte committen.
+Do not commit generated reports or one-off profiling artifacts.

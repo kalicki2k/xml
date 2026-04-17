@@ -26,7 +26,8 @@ escaping, and validation. It does not try to become a parser or query library.
 composer require kalle/xml
 ```
 
-See `examples/` for runnable scripts.
+See `examples/` for runnable scripts covering the document model, streaming
+output, namespace-aware writing, and file targets.
 
 ## Choosing an API
 
@@ -35,7 +36,7 @@ subtrees, or keep test fixtures highly readable.
 
 Use `StreamingXmlWriter` when output is generated incrementally, documents are
 large, or you want to write directly to a file path or PHP stream without
-building the full tree first.
+retaining the full tree in memory.
 
 Both APIs share the same XML rules around escaping, namespace handling, and
 writer configuration.
@@ -129,6 +130,9 @@ Streaming writer notes:
 - namespace declarations are auto-resolved from element and attribute names
 - `writeElement()` lets you mix prebuilt immutable subtrees into a stream
 - pretty-printed imperative streaming is intended for structural content; use compact mode for unconstrained mixed-content generation
+
+See `examples/streaming-to-file.php` for a minimal `forFile()` example that
+also mixes prebuilt elements into a stream.
 
 ## Namespace-Aware API
 
@@ -247,7 +251,7 @@ src/
 tests/
   Unit/         Focused object and validation tests
   Integration/  Document/streaming output, stream/file output, and parser-backed checks
-examples/       Runnable examples such as catalog.php, streaming-catalog.php, and streaming-feed.php
+examples/       Runnable examples such as catalog.php, streaming-catalog.php, streaming-to-file.php, and streaming-feed.php
 benchmarks/     Maintained performance comparison fixtures
 docs/           Maintainer-facing notes
 ```
@@ -296,6 +300,7 @@ Not included:
 ## Status
 
 v1.1 extends the original document model with production-oriented streaming XML
-writing. The project remains intentionally narrow in scope: API clarity, XML
-correctness, and a solid writer foundation come before scope expansion. See
+writing. The package is ready for early public use as a focused XML writer, but
+its scope remains intentionally narrow. Near-term releases should keep refining
+the writer surface rather than expanding into parser or query features. See
 `docs/roadmap.md` for the current milestone summary.
