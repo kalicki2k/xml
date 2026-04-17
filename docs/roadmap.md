@@ -23,10 +23,10 @@ The v1.3 milestone adds:
 ## Current Direction
 
 The package remains intentionally writer-focused with a small complementary
-reader and query API. Near-term work should improve writer ergonomics, reader
-clarity, query clarity, correctness, performance visibility, and documentation
-quality without expanding into unrelated XML features or turning the query
-layer into a broader framework.
+reader and reader-side query API. Near-term work should improve writer
+ergonomics, reader clarity, query clarity, correctness, performance
+visibility, and documentation quality without expanding into unrelated XML
+features or turning the query layer into a broader framework.
 
 ## Out Of Scope
 

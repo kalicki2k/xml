@@ -191,7 +191,7 @@ Reader notes:
 See `examples/reading-catalog.php`, `examples/reading-config.php`,
 `examples/reading-feed.php`, `examples/reading-stream.php`,
 `examples/query-feed.php`, and `examples/query-invoice.php` for runnable
-reader examples.
+reader and query examples.
 
 ## Reader Query Quick Start
 
@@ -320,7 +320,7 @@ The library rejects invalid XML early:
 - invalid streaming writer state transitions
 
 Exception messages are intentionally short and aimed at the call site, so
-invalid writer input is easy to diagnose.
+invalid writer, reader, and query input is easy to diagnose.
 
 ## Key Repository Directories
 
@@ -334,13 +334,13 @@ src/
   Name/         QualifiedName value object
   Namespace/    Namespace declarations and scope handling
   Node/         Element and other writer node types
-  Reader/       Read-only document and element traversal
+  Reader/       Read-only traversal plus small XPath-style reader queries
   Validate/     XML name validation
   Writer/       Streaming writer, output targets, namespace emission, and configuration
 tests/
   Unit/         Focused object and validation tests
-  Integration/  Document/streaming output, reader traversal, stream/file output, and parser-backed checks
-examples/       Runnable examples such as catalog.php, reading-catalog.php, streaming-catalog.php, and streaming-feed.php
+  Integration/  Document/streaming output, reader traversal, reader queries, stream/file output, and parser-backed checks
+examples/       Runnable examples such as catalog.php, query-feed.php, reading-catalog.php, and streaming-feed.php
 benchmarks/     Maintained performance comparison fixtures
 docs/           Maintainer-facing notes
 ```
@@ -386,11 +386,11 @@ Included today:
 - read-only document and element traversal via `XmlReader`
 - a small XPath-style query layer on top of the reader model
 
-Not included:
+Still out of scope:
 
 - mutation APIs for queried or loaded XML
 - XSD validation
-- broad DOM/XPath wrapper APIs or a custom query engine
+- broad DOM/XPath wrapper APIs beyond `findFirst()` and `findAll()`
 - XML-to-array or XML-to-object mapping
 - streaming parser APIs
 

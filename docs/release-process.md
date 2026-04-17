@@ -9,6 +9,7 @@ before a tag is created.
 - confirm that examples use only the final public API names
 - update `docs/roadmap.md` if the release changes milestone status or package direction
 - check that README example and benchmark filenames still exist
+- confirm that reader-query examples still match the documented `findFirst()` / `findAll()` API
 
 ## Required QA
 
@@ -28,6 +29,7 @@ Use the smoke checks that match the release surface:
 ```bash
 php examples/catalog.php > /tmp/kalle-example-catalog.xml
 php examples/query-feed.php
+php examples/query-invoice.php
 php examples/reading-catalog.php
 php examples/reading-config.php
 php examples/reading-feed.php

@@ -1,9 +1,9 @@
 # Examples
 
-Runnable examples for the public writer and reader APIs:
+Runnable examples for the public writer, reader, and query APIs:
 
 - `catalog.php` uses the document model for a small pretty-printed catalog
-- `query-feed.php` runs namespace-aware document-scoped and element-scoped queries against a feed document
+- `query-feed.php` runs a minimal namespace-aware reader query against a feed document
 - `query-invoice.php` runs document-scoped and element-scoped queries against a namespace-heavy invoice document
 - `reading-catalog.php` loads XML from a string and traverses it read-only
 - `reading-config.php` loads a config-like XML document from a string
