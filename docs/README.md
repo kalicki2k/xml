@@ -1,30 +1,37 @@
 # Documentation
 
-This directory contains maintainer-facing notes that do not belong in the
-public README or the package runtime.
+Public documentation for `kalle/xml`.
 
-Recommended content here:
+This docs tree separates onboarding, capability guides, conceptual
+explanations, and the API reference so the package stays easy to navigate and
+maintain as its XML surface grows.
 
-- roadmap and milestone status notes
-- release and QA checklists
-- release notes and release process details
-- architecture notes for document output and namespace behavior
-- compatibility decisions and XML edge-case references
-- contributor-oriented guidance when the workflow grows beyond the main README
+## Start Here
 
-Repository layout highlights:
+- [Landing page](../README.md)
+- [Getting Started](getting-started.md)
 
-- `src/` contains the library code grouped by concern
-- `src/Namespace/` contains namespace declarations and namespace scope handling
-- `src/Reader/` contains `XmlReader` plus the read-only traversal and query support
-- `src/Import/` contains `XmlImporter` for compact reader-to-writer imports
-- `src/Validation/` contains `XmlValidator` plus validation result types
-- `tests/Unit/` covers focused object behavior and validation
-- `tests/Integration/` covers document/streaming output, reader traversal, reader queries, reader import, XSD validation, file output, and parser-backed checks
-- `examples/` contains runnable example scripts
-- `benchmarks/` contains maintained performance comparison fixtures
-- `docs/roadmap.md` tracks the current package direction and milestone status
-- `docs/release-process.md` captures the maintainer release workflow
+## Capability Guides
 
-Keep public usage guidance in the top-level `README.md`. Use this directory for
-deeper notes that help maintainers evolve the library safely.
+- [Writer guides](writer/README.md)
+- [Reader guides](reader/README.md)
+- [Import guides](import/README.md)
+- [Validation guides](validation/README.md)
+
+## Concepts
+
+- [Choosing an API](concepts/choosing-an-api.md)
+- [Work with Namespaces](concepts/namespaces.md)
+
+## API Reference
+
+- [API reference index](api/README.md)
+- [API overview](api/overview.md)
+
+## Examples
+
+- [Examples index](../examples/README.md)
+
+## Maintainer Notes
+
+- [Maintainer docs](maintainer/README.md)

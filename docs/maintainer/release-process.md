@@ -1,14 +1,15 @@
 # Release Process
 
-Keep releases boring: documentation, QA, examples, and benchmarks should agree
-before a tag is created.
+Keep releases boring: public docs, examples, QA, and package metadata should
+agree before a tag is created.
 
 ## Before Tagging
 
-- make sure `README.md`, `examples/`, `benchmarks/`, and `composer.json` describe the same package scope and terminology
-- confirm that examples use only the final public API names
-- update `docs/roadmap.md` if the release changes milestone status or package direction
-- check that README example and benchmark filenames still exist
+- make sure `README.md`, `docs/`, `examples/`, and `composer.json` describe the same package scope and terminology
+- confirm that public guides and examples use only the final public API names
+- update `roadmap.md` if the release changes milestone status or package direction
+- check that README and docs links still point to existing files
+- confirm that `docs/api/` still matches the public class and method surface
 - confirm that reader-query examples still match the documented `findFirst()` / `findAll()` API
 - confirm that import examples still match the documented `XmlImporter` API
 - confirm that validation examples still match the documented `XmlValidator` API
