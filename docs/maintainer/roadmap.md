@@ -1,23 +1,27 @@
 # Roadmap
 
-## v1.6 Status
+## v1.7 Status
 
-`kalle/xml` v1.6 now combines two writer paths with a separate read-only
-reader, a small query layer built on top of that reader model, explicit DOM
-interop, a compact reader-to-writer import bridge, and compact XSD validation
-as separate capabilities:
+`kalle/xml` v1.7 now combines two writer paths with a separate streaming
+reader, a separate read-only tree reader, a small query layer built on top of
+that tree reader model, explicit DOM interop, a compact reader-to-writer
+import bridge, and compact XSD validation as separate capabilities:
 
 - `Xml` for tree-based XML construction
 - `StreamingXmlWriter` for incremental XML writing
+- `StreamingXmlReader` for incremental, cursor-based XML reading from files and streams
 - `XmlReader` for namespace-aware document and element traversal
 - `XmlDomBridge` plus DOM entry points on `XmlReader` for explicit DOM interop
 - `findAll()` and `findFirst()` on `ReaderDocument` and `ReaderElement` for small XPath-style element queries
 - `XmlImporter` for importing `ReaderDocument` and `ReaderElement` into the immutable writer-side model
 - `XmlValidator` for validating XML strings, files, streams, and `XmlDocument` instances against XSD schemas
 
-The v1.6 milestone adds:
+The v1.7 milestone adds:
 
 - loading XML from strings, files, and PHP streams
+- incremental, namespace-aware streaming XML reading from files and streams
+- a compact streaming cursor API centered on `read()`, `nodeType()`, `isStartElement()`, `expandElement()`, and `extractElementXml()`
+- subtree extraction from `StreamingXmlReader` back into the existing `ReaderElement`, `XmlReader`, `XmlImporter`, `XmlValidator`, and writer flows
 - read-only document and element traversal without reader concerns leaking into `Xml`
 - namespace-aware element names, attribute access, and in-scope namespace inspection
 - compact reader traversal centered around `rootElement()`, `firstChildElement()`, and `childElements()`
@@ -31,6 +35,7 @@ The v1.6 milestone adds:
 - compact import of `ReaderDocument` into `XmlDocument` and `ReaderElement` into `Element`
 - imported results stay regular immutable writer-side `XmlDocument` and `Element` instances
 - namespace-aware reader-to-query-to-import-to-write workflows
+- realistic streaming-reader examples and integration tests, including filtered export workflows, alongside the existing reader, import, and validation coverage
 - import coverage for mixed content, namespaced documents, and unsupported DTD/entity cases
 - namespace-aware validation workflows for writer-built documents and schema-file workflows with relative imports
 - validation results with line- and column-aware diagnostics for invalid but well-formed XML
@@ -40,12 +45,14 @@ The v1.6 milestone adds:
 ## Current Direction
 
 The package remains intentionally writer-focused with a small complementary
-reader, reader-side query API, explicit DOM interop, a compact import bridge,
-and separate validation capability. Near-term work should improve writer
-ergonomics, reader clarity, DOM interop clarity, query clarity, import
+streaming reader, a small complementary tree reader, a reader-side query API,
+explicit DOM interop, a compact import bridge, and separate validation
+capability. Near-term work should improve writer ergonomics, reader clarity,
+DOM interop clarity, query clarity, import
 clarity, validation clarity, correctness, performance visibility, and
 documentation quality without expanding into unrelated XML features or turning
-the element-oriented query layer, the DOM interop, the import bridge, or the
+the element-oriented query layer, the streaming reader, the DOM interop, the
+import bridge, or the
 XSD support into broader frameworks.
 
 ## Out Of Scope
@@ -53,6 +60,7 @@ XSD support into broader frameworks.
 The roadmap still excludes:
 
 - full DOM/XPath wrapper APIs beyond the current query layer
+- broad SAX/event-bus abstractions beyond the current streaming cursor
 - RELAX NG or broader schema-language support
 - mutation APIs for loaded XML
 - XML-to-array or XML-to-object mapping

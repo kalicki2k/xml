@@ -13,6 +13,7 @@ the main methods it exposes, or the kind of result or exception to expect.
 - [Builder](builder.md): `Xml`, `Element`, `XmlDocument`, `QualifiedName`, and `XmlDeclaration`
 - [Writer](writer.md): `StreamingXmlWriter` and `WriterConfig`
 - [Reader](reader.md): `XmlReader`, `ReaderDocument`, and `ReaderElement`
+- [Streaming reader](streaming-reader.md): `StreamingXmlReader` and `StreamingNodeType`
 - [DOM interop](dom.md): `XmlDomBridge` plus the DOM entry points on `XmlReader`
 - [Query](query.md): `findAll()` and `findFirst()` on the reader model
 - [Import](import.md): `XmlImporter`

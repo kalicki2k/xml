@@ -1,8 +1,9 @@
 # Getting Started
 
 `kalle/xml` is a compact, strict XML library for PHP 8.2+. The package stays
-intentionally narrow in scope: build XML, stream XML, load XML read-only, run
-small reader-side queries, use explicit DOM interop when needed, import reader
+intentionally narrow in scope: build XML, stream XML output, read XML
+incrementally, load XML into a read-only tree when needed, run small
+reader-side queries, use explicit DOM interop when needed, import reader
 results back into the writer model, and validate XML against XSD.
 
 This guide gives first-time users a practical path through those pieces.
@@ -13,13 +14,14 @@ This guide gives first-time users a practical path through those pieces.
 composer require kalle/xml
 ```
 
-Runtime requirements: `ext-dom` and `ext-libxml`.
+Runtime requirements: `ext-dom`, `ext-libxml`, and `ext-xmlreader`.
 
 ## 2. Choose the Right API
 
 - Use `Xml` when you want to build an XML tree in memory.
 - Use `StreamingXmlWriter` when output should be generated incrementally or written straight to a file or stream.
-- Use `XmlReader` when you want read-only access to existing XML.
+- Use `StreamingXmlReader` when input is large or incremental and you only need a cursor plus occasional subtree extraction.
+- Use `XmlReader` when you want read-only access to an already loaded XML tree.
 - Use DOM interop when you need to connect writer-side or reader-side XML flows to native `DOMDocument` or `DOMElement` values.
 - Use `findAll()` and `findFirst()` when filtered element lookups are clearer than repeated traversal.
 - Use `XmlImporter` when loaded or queried XML should move back into the writer-side model.
@@ -79,7 +81,35 @@ echo $writer->toString();
 Use streaming when the full tree should not stay in memory or when output
 should go directly to a file path or PHP stream.
 
-## 5. Load Your First Document with `XmlReader`
+## 5. Read Large XML with `StreamingXmlReader`
+
+```php
+<?php
+
+declare(strict_types=1);
+
+use Kalle\Xml\Reader\StreamingXmlReader;
+
+$path = '/path/to/catalog.xml';
+$reader = StreamingXmlReader::fromFile($path);
+
+while ($reader->read()) {
+    if (!$reader->isStartElement('book')) {
+        continue;
+    }
+
+    $book = $reader->expandElement();
+
+    echo $reader->attributeValue('isbn') . "\n";
+    echo $book->firstChildElement('title')?->text() . "\n";
+}
+```
+
+Use `StreamingXmlReader` when a full in-memory tree would be wasteful. The
+cursor stays small, and `expandElement()` plus `extractElementXml()` are the
+bridges back into the regular reader, import, validation, and writer flows.
+
+## 6. Load Your First Document with `XmlReader`
 
 ```php
 <?php
@@ -102,7 +132,7 @@ if ($book !== null) {
 
 `XmlReader` is read-only. Use it for traversal and inspection, not mutation.
 
-## 6. Run Your First Reader Query
+## 7. Run Your First Reader Query
 
 ```php
 <?php
@@ -129,7 +159,7 @@ if ($entry !== null) {
 The query layer is intentionally small. Queries return `ReaderElement`
 instances so you stay inside the reader model after the lookup.
 
-## 7. Import Your First Reader Result
+## 8. Import Your First Reader Result
 
 Continuing from the query example:
 
@@ -151,7 +181,7 @@ if ($entry !== null) {
 Use import when queried or traversed XML needs to be rewritten, streamed, or
 validated through the writer-side model.
 
-## 8. Validate Your First Document
+## 9. Validate Your First Document
 
 ```php
 <?php
@@ -201,7 +231,7 @@ if ($result->isValid()) {
 Invalid but well-formed XML returns a `ValidationResult`. Malformed XML and
 invalid schemas still raise exceptions.
 
-## 9. Keep Namespace Handling Simple
+## 10. Keep Namespace Handling Simple
 
 - Use `Xml::qname()` when writing namespaced elements or attributes.
 - Use `QualifiedName` when a reader lookup must match a specific namespace URI.
@@ -210,10 +240,10 @@ invalid schemas still raise exceptions.
 - XPath does not apply the XML default namespace automatically, so queries need an explicit alias such as `['feed' => 'urn:feed']`.
 - `XmlImporter` preserves namespace-aware names and rebuilds root-level namespace declarations from imported subtrees.
 
-## 10. Where To Go Next
+## 11. Where To Go Next
 
 - Continue with [Writer guides](writer/README.md) for tree-based and streaming output.
-- Continue with [Reader guides](reader/README.md) for traversal and query details.
+- Continue with [Reader guides](reader/README.md) for streaming, traversal, and query details.
 - Continue with the [DOM interop guide](dom/interop.md) when you need native DOM in the middle of a workflow.
 - Continue with [Import guides](import/README.md) for reader-to-writer workflows.
 - Continue with [Validation guides](validation/README.md) for schema-focused validation details.

@@ -1,10 +1,11 @@
 # Reader Guides
 
-Use the reader guides when loading existing XML through the compact read-only
-API.
+Use the reader guides when loading existing XML through either the streaming
+cursor or the compact read-only tree API.
 
 ## Guides
 
+- [Read Large XML with `StreamingXmlReader`](streaming.md)
 - [Traverse XML with `XmlReader`](traversal.md)
 - [Run Reader Queries](queries.md)
 

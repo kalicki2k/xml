@@ -26,6 +26,18 @@ directly to a string buffer, file path, or stream resource.
 
 Continue with [Writer](writer.md).
 
+## Streaming Input
+
+Use `StreamingXmlReader` when XML input is large, incremental, or should be
+processed one subtree at a time.
+
+- `StreamingXmlReader` reads from files and stream resources through a cursor-based API.
+- `StreamingNodeType` describes the current native XML node type.
+- `expandElement()` materializes one matching start element back into a regular `ReaderElement`.
+- `extractElementXml()` returns one matching start element subtree as XML without loading the whole document tree.
+
+Continue with [Streaming reader](streaming-reader.md).
+
 ## Reading and Querying
 
 Use the reader-side types when you are loading existing XML read-only.
@@ -65,6 +77,7 @@ Most library failures use dedicated exception types under
 
 - `SerializationException` covers writer-state problems.
 - `ReadException` and `QueryException` cover loading and query failures.
+- `StreamingReaderException` covers streaming-reader state and element-expansion misuse.
 - `ValidationException` covers schema-setup failures.
 - `DomInteropException` covers DOM-export and DOM-entry-point failures.
 - `XmlException` is the common root for library-specific runtime errors.

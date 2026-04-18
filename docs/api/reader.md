@@ -3,6 +3,9 @@
 The reader API loads existing XML and exposes it through a compact read-only
 model.
 
+Use this page for the tree/DOM-backed reader model. For large or incremental
+input, continue with [Streaming reader](streaming-reader.md).
+
 ## `XmlReader`
 
 `XmlReader` is the loading entry point.
@@ -81,6 +84,7 @@ Behavior notes:
 ## Related
 
 - [Overview](overview.md)
+- [Streaming reader](streaming-reader.md)
 - [DOM interop](dom.md)
 - [Query](query.md)
 - [Import](import.md)

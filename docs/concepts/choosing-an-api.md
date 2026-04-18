@@ -10,7 +10,8 @@ the smallest one that fits the job.
 
 ## Reading XML
 
-- Use `XmlReader` when you need read-only traversal of existing XML.
+- Use `StreamingXmlReader` when input is large or incremental and cursor-style processing, subtree extraction, or filtered export is enough.
+- Use `XmlReader` when you need a loaded tree for read-only traversal, parent/child navigation, or queries.
 - Use `findAll()` and `findFirst()` when filtered element lookups are clearer than repeated traversal.
 
 ## Bridging and Validation

@@ -39,6 +39,8 @@ Builder-side validation also uses dedicated exceptions such as:
   File input could not be read.
 - `StreamReadException`
   Stream input could not be read.
+- `StreamingReaderException`
+  `StreamingXmlReader` is closed, not positioned on a start element, or cannot materialize the current subtree for `expandElement()` or `extractElementXml()`.
 - `ParseException`
   Input was readable but malformed XML.
 - `QueryException`
@@ -75,6 +77,7 @@ Practical catch points:
 
 - Catch `XmlException` for one broad library-level catch.
 - Catch `ReadException` when loading from files, streams, or strings.
+- Catch `StreamingReaderException` when the risky boundary is streaming-reader cursor state or subtree expansion.
 - Catch `DomInteropException` when the risky boundary is native DOM export or entering the reader flow from `DOMDocument` or `DOMElement`.
 - Catch `QueryException` when user-supplied query expressions may fail.
 - Catch `ValidationException` when schema setup is the risky part.

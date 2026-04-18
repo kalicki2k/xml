@@ -1,6 +1,6 @@
 {
     "name": "kalle/xml",
-    "description": "A compact XML library for PHP with immutable and streaming writers, a read-only reader, small XPath-style reader queries, explicit DOM interop, a reader-to-writer import bridge, and XSD validation",
+    "description": "A compact XML library for PHP with immutable and streaming writers, a streaming reader, a read-only tree reader, small XPath-style reader queries, explicit DOM interop, a reader-to-writer import bridge, and XSD validation",
     "keywords": [
         "xml",
         "writer",
@@ -21,7 +21,8 @@
     "require": {
         "php": "^8.2",
         "ext-dom": "*",
-        "ext-libxml": "*"
+        "ext-libxml": "*",
+        "ext-xmlreader": "*"
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.80",

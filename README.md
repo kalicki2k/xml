@@ -6,6 +6,7 @@ It provides:
 
 - `Xml` for immutable, tree-based XML construction
 - `StreamingXmlWriter` for incremental XML output to strings, files, and streams
+- `StreamingXmlReader` for incremental, cursor-based XML reading from files and streams
 - `XmlReader` for read-only traversal of existing XML
 - `XmlDomBridge` plus DOM entry points on `XmlReader` for explicit DOM interop
 - `findAll()` and `findFirst()` for small namespace-aware element queries on the reader model
@@ -13,9 +14,9 @@ It provides:
 - `XmlValidator` for validating XML against XSD schemas
 
 The package stays intentionally narrow in scope. It covers XML writing,
-read-only loading, small reader-side queries, explicit DOM interop,
-reader-to-writer import, and XSD validation without trying to replace DOM,
-wrap all of XPath, or become a broad XML framework.
+streaming XML reading, read-only tree loading, small reader-side queries,
+explicit DOM interop, reader-to-writer import, and XSD validation without
+trying to replace DOM, wrap all of XPath, or become a broad XML framework.
 
 ## Installation
 
@@ -23,7 +24,7 @@ wrap all of XPath, or become a broad XML framework.
 composer require kalle/xml
 ```
 
-Runtime requirements: `ext-dom` and `ext-libxml`.
+Runtime requirements: `ext-dom`, `ext-libxml`, and `ext-xmlreader`.
 
 ## Current Scope
 
@@ -31,6 +32,7 @@ Included:
 
 - tree-based XML writing with `Xml`
 - streaming XML writing with `StreamingXmlWriter`
+- streaming XML reading with `StreamingXmlReader`
 - read-only XML loading with `XmlReader`
 - explicit DOM interop with `XmlDomBridge` and `XmlReader::fromDomDocument()` / `fromDomElement()`
 - small namespace-aware element queries with `findAll()` and `findFirst()`
@@ -67,7 +69,8 @@ echo Xml::document(
 
 - Use `Xml` when you want to build an XML tree in memory, reuse subtrees, or keep fixtures readable.
 - Use `StreamingXmlWriter` when output is incremental, large, or should go straight to a file or stream.
-- Use `XmlReader` when you need read-only traversal of existing XML.
+- Use `StreamingXmlReader` when input is large or incremental and you only need cursor-style inspection, subtree extraction, or filtered export.
+- Use `XmlReader` when you want a loaded tree for traversal, parent/child navigation, or queries.
 - Use DOM interop when writer-side or reader-side flows need to connect to existing `DOMDocument` or `DOMElement` values without adopting a mutable DOM wrapper.
 - Use reader queries when `findAll()` or `findFirst()` is clearer than repeated traversal.
 - Use `XmlImporter` when reader results need to move back into the writer-side model.
@@ -79,6 +82,7 @@ echo Xml::document(
 - [Getting Started](docs/getting-started.md)
 - [Writer guides](docs/writer/README.md)
 - [Reader guides](docs/reader/README.md)
+- [Streaming reader guide](docs/reader/streaming.md)
 - [DOM interop guide](docs/dom/interop.md)
 - [Import guides](docs/import/README.md)
 - [Validation guides](docs/validation/README.md)
@@ -86,4 +90,5 @@ echo Xml::document(
 - [Work with Namespaces](docs/concepts/namespaces.md)
 - [API reference](docs/api/README.md)
 - [Examples](examples/README.md)
+- Streaming reader examples: [streaming-reader-catalog.php](examples/streaming-reader-catalog.php), [streaming-reader-invoice.php](examples/streaming-reader-invoice.php), [streaming-reader-feed-export.php](examples/streaming-reader-feed-export.php)
 - DOM examples: [dom-roundtrip.php](examples/dom-roundtrip.php), [dom-feed-query.php](examples/dom-feed-query.php), [dom-invoice-stream.php](examples/dom-invoice-stream.php)

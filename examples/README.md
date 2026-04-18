@@ -1,7 +1,7 @@
 # Examples
 
-Runnable examples for tree-based writing, streaming writing, read-only reading,
-DOM interop, query, import, and validation APIs.
+Runnable examples for tree-based writing, streaming writing, streaming reading,
+read-only tree reading, DOM interop, query, import, and validation APIs.
 
 Use them alongside the docs:
 
@@ -26,7 +26,13 @@ Use them alongside the docs:
 - `streaming-feed.php` streams a namespace-aware feed incrementally to `php://stdout`.
 - `streaming-to-file.php` writes to a file path and mixes prebuilt subtrees into the stream.
 
-## Reader
+## Streaming Reader
+
+- `streaming-reader-catalog.php` reads a catalog file incrementally and expands matching `<book>` elements into the regular reader model.
+- `streaming-reader-invoice.php` reads a namespaced invoice stream incrementally, expands one subtree, and imports it back into the writer model.
+- `streaming-reader-feed-export.php` streams a namespace-aware feed, filters matching `<entry>` records, and writes the imported results back out incrementally.
+
+## Tree Reader
 
 - `reading-catalog.php` loads XML from a string and traverses it read-only.
 - `reading-config.php` loads a config-like XML document from a string.
@@ -64,6 +70,9 @@ php examples/query-feed.php
 php examples/query-invoice.php
 php examples/import-feed-entry.php
 php examples/import-invoice-party.php
+php examples/streaming-reader-catalog.php
+php examples/streaming-reader-invoice.php
+php examples/streaming-reader-feed-export.php
 php examples/dom-roundtrip.php
 php examples/dom-feed-query.php
 php examples/dom-invoice-stream.php

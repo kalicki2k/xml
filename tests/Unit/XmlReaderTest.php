@@ -47,7 +47,7 @@ final class XmlReaderTest extends TestCase
     public function testItRejectsAnEmptyFilePath(): void
     {
         $this->expectException(FileReadException::class);
-        $this->expectExceptionMessage('empty path');
+        $this->expectExceptionMessage('XmlReader::fromFile() requires a non-empty path.');
 
         XmlReader::fromFile('');
     }
@@ -65,7 +65,7 @@ final class XmlReaderTest extends TestCase
         $path = sys_get_temp_dir() . '/kalle-xml-missing-reader.xml';
 
         $this->expectException(FileReadException::class);
-        $this->expectExceptionMessage('Cannot read XML file');
+        $this->expectExceptionMessage('XmlReader::fromFile() could not read XML file');
         $this->expectExceptionMessage('No such file or directory');
 
         XmlReader::fromFile($path);
@@ -79,7 +79,7 @@ final class XmlReaderTest extends TestCase
 
         try {
             $this->expectException(FileReadException::class);
-            $this->expectExceptionMessage('Cannot read XML file');
+            $this->expectExceptionMessage('XmlReader::fromFile() could not read XML file');
             $this->expectExceptionMessage('Is a directory');
 
             XmlReader::fromFile($path);
@@ -91,7 +91,7 @@ final class XmlReaderTest extends TestCase
     public function testItRejectsNonStreamInputs(): void
     {
         $this->expectException(StreamReadException::class);
-        $this->expectExceptionMessage('readable stream resource');
+        $this->expectExceptionMessage('XmlReader::fromStream() requires a readable stream resource');
 
         XmlReader::fromStream(123);
     }
@@ -108,6 +108,7 @@ final class XmlReaderTest extends TestCase
 
         try {
             $this->expectException(StreamReadException::class);
+            $this->expectExceptionMessage('XmlReader::fromStream() requires a readable stream resource');
             $this->expectExceptionMessage('not readable');
 
             XmlReader::fromStream($stream);
