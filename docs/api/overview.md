@@ -37,6 +37,16 @@ Use the reader-side types when you are loading existing XML read-only.
 
 Continue with [Reader](reader.md) and [Query](query.md).
 
+## DOM Interop
+
+Use DOM interop when existing code already works with native DOM values.
+
+- `XmlDomBridge::toDomDocument()` exports `XmlDocument` into `DOMDocument`.
+- `XmlDomBridge::elementToDomDocument()` exports one writer-side subtree into a one-root `DOMDocument`.
+- `XmlReader::fromDomDocument()` and `XmlReader::fromDomElement()` enter the existing reader flow directly from DOM.
+
+Continue with [DOM interop](dom.md).
+
 ## Import and Validation
 
 Use these capabilities when reader and writer workflows need to meet, or when
@@ -56,6 +66,7 @@ Most library failures use dedicated exception types under
 - `SerializationException` covers writer-state problems.
 - `ReadException` and `QueryException` cover loading and query failures.
 - `ValidationException` covers schema-setup failures.
+- `DomInteropException` covers DOM-export and DOM-entry-point failures.
 - `XmlException` is the common root for library-specific runtime errors.
 
 Continue with [Exceptions](exceptions.md).

@@ -10,6 +10,7 @@ agree before a tag is created.
 - update `roadmap.md` if the release changes milestone status or package direction
 - check that README and docs links still point to existing files
 - confirm that `docs/api/` still matches the public class and method surface
+- confirm that DOM interop docs and examples still match `XmlDomBridge` and the DOM entry points on `XmlReader`
 - confirm that reader-query examples still match the documented `findFirst()` / `findAll()` API
 - confirm that import examples still match the documented `XmlImporter` API
 - confirm that validation examples still match the documented `XmlValidator` API
@@ -35,6 +36,7 @@ php examples/query-feed.php
 php examples/query-invoice.php
 php examples/import-feed-entry.php
 php examples/import-invoice-party.php
+php examples/dom-roundtrip.php
 php examples/validate-catalog.php
 php examples/validate-feed.php
 php examples/reading-catalog.php

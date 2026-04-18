@@ -282,6 +282,10 @@ final class XmlImporter
             return;
         }
 
+        if ($prefix === 'xml' && $namespaceUri === QualifiedName::XML_NAMESPACE_URI) {
+            return;
+        }
+
         $prefixUsages[$prefix] = $namespaceUri;
     }
 
@@ -296,6 +300,10 @@ final class XmlImporter
         $namespaceUri = $name->namespaceUri();
 
         if ($prefix === null || $namespaceUri === null) {
+            return;
+        }
+
+        if ($prefix === 'xml' && $namespaceUri === QualifiedName::XML_NAMESPACE_URI) {
             return;
         }
 

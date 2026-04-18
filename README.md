@@ -7,14 +7,15 @@ It provides:
 - `Xml` for immutable, tree-based XML construction
 - `StreamingXmlWriter` for incremental XML output to strings, files, and streams
 - `XmlReader` for read-only traversal of existing XML
+- `XmlDomBridge` plus DOM entry points on `XmlReader` for explicit DOM interop
 - `findAll()` and `findFirst()` for small namespace-aware element queries on the reader model
 - `XmlImporter` for importing reader results back into the writer model
 - `XmlValidator` for validating XML against XSD schemas
 
 The package stays intentionally narrow in scope. It covers XML writing,
-read-only loading, small reader-side queries, reader-to-writer import, and XSD
-validation without trying to replace DOM, wrap all of XPath, or become a broad
-XML framework.
+read-only loading, small reader-side queries, explicit DOM interop,
+reader-to-writer import, and XSD validation without trying to replace DOM,
+wrap all of XPath, or become a broad XML framework.
 
 ## Installation
 
@@ -28,12 +29,13 @@ Runtime requirements: `ext-dom` and `ext-libxml`.
 
 Included:
 
-- document writing with `Xml`
-- incremental output with `StreamingXmlWriter`
+- tree-based XML writing with `Xml`
+- streaming XML writing with `StreamingXmlWriter`
 - read-only XML loading with `XmlReader`
+- explicit DOM interop with `XmlDomBridge` and `XmlReader::fromDomDocument()` / `fromDomElement()`
 - small namespace-aware element queries with `findAll()` and `findFirst()`
 - reader-to-writer import with `XmlImporter`
-- XSD validation with `XmlValidator`
+- compact XSD validation with `XmlValidator`
 
 Out of scope:
 
@@ -66,6 +68,7 @@ echo Xml::document(
 - Use `Xml` when you want to build an XML tree in memory, reuse subtrees, or keep fixtures readable.
 - Use `StreamingXmlWriter` when output is incremental, large, or should go straight to a file or stream.
 - Use `XmlReader` when you need read-only traversal of existing XML.
+- Use DOM interop when writer-side or reader-side flows need to connect to existing `DOMDocument` or `DOMElement` values without adopting a mutable DOM wrapper.
 - Use reader queries when `findAll()` or `findFirst()` is clearer than repeated traversal.
 - Use `XmlImporter` when reader results need to move back into the writer-side model.
 - Use `XmlValidator` when XML must match an XSD schema.
@@ -76,9 +79,11 @@ echo Xml::document(
 - [Getting Started](docs/getting-started.md)
 - [Writer guides](docs/writer/README.md)
 - [Reader guides](docs/reader/README.md)
+- [DOM interop guide](docs/dom/interop.md)
 - [Import guides](docs/import/README.md)
 - [Validation guides](docs/validation/README.md)
 - [Choosing an API](docs/concepts/choosing-an-api.md)
 - [Work with Namespaces](docs/concepts/namespaces.md)
 - [API reference](docs/api/README.md)
 - [Examples](examples/README.md)
+- DOM examples: [dom-roundtrip.php](examples/dom-roundtrip.php), [dom-feed-query.php](examples/dom-feed-query.php), [dom-invoice-stream.php](examples/dom-invoice-stream.php)

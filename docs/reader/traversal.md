@@ -99,6 +99,7 @@ The reader API stays intentionally small:
 - [Reader guides](README.md)
 - [Getting Started](../getting-started.md)
 - [Run Reader Queries](queries.md)
+- [DOM interop guide](../dom/interop.md)
 - [Work with Namespaces](../concepts/namespaces.md)
 - [Import guides](../import/README.md)
 - [API reference](../api/README.md)

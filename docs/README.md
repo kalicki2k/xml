@@ -15,6 +15,7 @@ maintain as its XML surface grows.
 
 - [Writer guides](writer/README.md)
 - [Reader guides](reader/README.md)
+- [DOM interop guide](dom/interop.md)
 - [Import guides](import/README.md)
 - [Validation guides](validation/README.md)
 

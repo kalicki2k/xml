@@ -48,6 +48,11 @@ Builder-side validation also uses dedicated exceptions such as:
 - `UnknownQueryNamespacePrefixException`
   Query references a namespace prefix that was not registered.
 
+## DOM Interop
+
+- `DomInteropException`
+  DOM export failed or a DOM value could not be entered into the reader flow.
+
 ## Import
 
 - `ImportException`
@@ -70,12 +75,14 @@ Practical catch points:
 
 - Catch `XmlException` for one broad library-level catch.
 - Catch `ReadException` when loading from files, streams, or strings.
+- Catch `DomInteropException` when the risky boundary is native DOM export or entering the reader flow from `DOMDocument` or `DOMElement`.
 - Catch `QueryException` when user-supplied query expressions may fail.
 - Catch `ValidationException` when schema setup is the risky part.
 
 ## Related
 
 - [Overview](overview.md)
+- [DOM interop](dom.md)
 - [Reader](reader.md)
 - [Query](query.md)
 - [Validation](validation.md)

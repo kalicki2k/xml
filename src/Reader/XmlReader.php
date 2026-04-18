@@ -7,6 +7,7 @@ namespace Kalle\Xml\Reader;
 use Closure;
 use DOMDocument;
 use DOMElement;
+use Kalle\Xml\Exception\DomInteropException;
 use Kalle\Xml\Exception\FileReadException;
 use Kalle\Xml\Exception\ParseException;
 use Kalle\Xml\Exception\StreamReadException;
@@ -91,6 +92,23 @@ final class XmlReader
         }
 
         return self::parseDocument($xml, self::describeStream($stream));
+    }
+
+    public static function fromDomDocument(DOMDocument $document): ReaderDocument
+    {
+        try {
+            return ReaderDocument::fromDomDocument($document);
+        } catch (LogicException $exception) {
+            throw new DomInteropException(
+                'XmlReader::fromDomDocument() requires a DOMDocument with a document element.',
+                previous: $exception,
+            );
+        }
+    }
+
+    public static function fromDomElement(DOMElement $element): ReaderElement
+    {
+        return ReaderElement::fromDomElement($element);
     }
 
     private static function parseDocument(string $xml, string $sourceLabel): ReaderDocument

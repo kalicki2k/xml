@@ -1,13 +1,14 @@
 # Examples
 
-Runnable examples for the public writer, reader, query, import, and validation
-APIs.
+Runnable examples for tree-based writing, streaming writing, read-only reading,
+DOM interop, query, import, and validation APIs.
 
 Use them alongside the docs:
 
 - [Getting Started](../docs/getting-started.md)
 - [Writer guides](../docs/writer/README.md)
 - [Reader guides](../docs/reader/README.md)
+- [DOM interop guide](../docs/dom/interop.md)
 - [Import guides](../docs/import/README.md)
 - [Validation guides](../docs/validation/README.md)
 - [Choosing an API](../docs/concepts/choosing-an-api.md)
@@ -31,6 +32,12 @@ Use them alongside the docs:
 - `reading-config.php` loads a config-like XML document from a string.
 - `reading-feed.php` loads namespace-aware XML from a file and reads prefixed attributes.
 - `reading-stream.php` loads an invoice-style XML document from a PHP stream.
+
+## DOM Interop
+
+- `dom-roundtrip.php` exports a writer-built feed into DOM, queries it through `XmlReader`, imports one result back, and writes it again.
+- `dom-feed-query.php` exports a realistic namespace-aware feed into DOM and queries it through the reader model.
+- `dom-invoice-stream.php` loads an invoice into `DOMDocument`, enters the reader flow from `DOMElement`, imports a subtree, and streams it out.
 
 ## Queries
 
@@ -57,6 +64,9 @@ php examples/query-feed.php
 php examples/query-invoice.php
 php examples/import-feed-entry.php
 php examples/import-invoice-party.php
+php examples/dom-roundtrip.php
+php examples/dom-feed-query.php
+php examples/dom-invoice-stream.php
 php examples/reading-catalog.php
 php examples/reading-config.php
 php examples/reading-feed.php

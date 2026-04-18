@@ -94,6 +94,7 @@ The document model is intentionally small:
 - [Writer guides](README.md)
 - [Getting Started](../getting-started.md)
 - [Stream XML Output](streaming.md)
+- [DOM interop guide](../dom/interop.md)
 - [Work with Namespaces](../concepts/namespaces.md)
 - [Validation guides](../validation/README.md)
 - [API reference](../api/README.md)

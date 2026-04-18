@@ -2,8 +2,8 @@
 
 `kalle/xml` is a compact, strict XML library for PHP 8.2+. The package stays
 intentionally narrow in scope: build XML, stream XML, load XML read-only, run
-small reader-side queries, import reader results back into the writer model,
-and validate XML against XSD.
+small reader-side queries, use explicit DOM interop when needed, import reader
+results back into the writer model, and validate XML against XSD.
 
 This guide gives first-time users a practical path through those pieces.
 
@@ -20,6 +20,7 @@ Runtime requirements: `ext-dom` and `ext-libxml`.
 - Use `Xml` when you want to build an XML tree in memory.
 - Use `StreamingXmlWriter` when output should be generated incrementally or written straight to a file or stream.
 - Use `XmlReader` when you want read-only access to existing XML.
+- Use DOM interop when you need to connect writer-side or reader-side XML flows to native `DOMDocument` or `DOMElement` values.
 - Use `findAll()` and `findFirst()` when filtered element lookups are clearer than repeated traversal.
 - Use `XmlImporter` when loaded or queried XML should move back into the writer-side model.
 - Use `XmlValidator` when well-formed XML is not enough and the document must match an XSD schema.
@@ -213,6 +214,7 @@ invalid schemas still raise exceptions.
 
 - Continue with [Writer guides](writer/README.md) for tree-based and streaming output.
 - Continue with [Reader guides](reader/README.md) for traversal and query details.
+- Continue with the [DOM interop guide](dom/interop.md) when you need native DOM in the middle of a workflow.
 - Continue with [Import guides](import/README.md) for reader-to-writer workflows.
 - Continue with [Validation guides](validation/README.md) for schema-focused validation details.
 - Continue with [Choosing an API](concepts/choosing-an-api.md) and [Work with Namespaces](concepts/namespaces.md) for the main cross-cutting concepts.

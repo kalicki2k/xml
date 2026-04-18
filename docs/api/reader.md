@@ -12,12 +12,17 @@ Important methods:
 - `fromString(string $xml): ReaderDocument`
 - `fromFile(string $path): ReaderDocument`
 - `fromStream(mixed $stream): ReaderDocument`
+- `fromDomDocument(DOMDocument $document): ReaderDocument`
+- `fromDomElement(DOMElement $element): ReaderElement`
 
 Behavior notes:
 
-- All three methods return a `ReaderDocument`.
+- `fromString()`, `fromFile()`, `fromStream()`, and `fromDomDocument()` return `ReaderDocument`.
 - Malformed XML raises `ParseException`.
 - Unreadable files or streams raise `FileReadException` or `StreamReadException`.
+- `fromDomDocument()` wraps an existing DOM document directly and raises `DomInteropException` when no document element is present.
+- `fromDomElement()` wraps one DOM subtree directly.
+- DOM-backed loading still returns the normal reader model; it does not introduce a DOM-specific reader API.
 
 ## `ReaderDocument`
 
@@ -76,6 +81,7 @@ Behavior notes:
 ## Related
 
 - [Overview](overview.md)
+- [DOM interop](dom.md)
 - [Query](query.md)
 - [Import](import.md)
 - [Traverse XML with `XmlReader`](../reader/traversal.md)

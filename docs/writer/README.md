@@ -16,5 +16,6 @@ Use the writer guides when producing XML.
 
 - [Getting Started](../getting-started.md)
 - [Choosing an API](../concepts/choosing-an-api.md)
+- [DOM interop guide](../dom/interop.md)
 - [Work with Namespaces](../concepts/namespaces.md)
 - [API reference](../api/README.md)

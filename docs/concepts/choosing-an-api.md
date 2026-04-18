@@ -15,6 +15,7 @@ the smallest one that fits the job.
 
 ## Bridging and Validation
 
+- Use `XmlDomBridge` plus `XmlReader::fromDomDocument()` or `XmlReader::fromDomElement()` when existing code already works with native DOM values.
 - Use `XmlImporter` when loaded or queried XML needs to move back into the writer-side model.
 - Use `XmlValidator` when well-formed XML is not enough and the document must match an XSD schema.
 
@@ -29,5 +30,6 @@ blurring the library into a broad XML framework.
 - [Getting Started](../getting-started.md)
 - [Writer guides](../writer/README.md)
 - [Reader guides](../reader/README.md)
+- [DOM interop guide](../dom/interop.md)
 - [Import guides](../import/README.md)
 - [Validation guides](../validation/README.md)

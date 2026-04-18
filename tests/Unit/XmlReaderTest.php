@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Kalle\Xml\Tests\Unit;
 
+use DOMDocument;
+use Kalle\Xml\Exception\DomInteropException;
 use Kalle\Xml\Exception\FileReadException;
 use Kalle\Xml\Exception\InvalidXmlName;
 use Kalle\Xml\Exception\ParseException;
@@ -136,5 +138,13 @@ final class XmlReaderTest extends TestCase
             self::assertStringContainsString('column', $exception->getMessage());
             self::assertStringContainsString('Namespace prefix a on child is not defined', $exception->getMessage());
         }
+    }
+
+    public function testItRejectsDomDocumentsWithoutADocumentElement(): void
+    {
+        $this->expectException(DomInteropException::class);
+        $this->expectExceptionMessage('XmlReader::fromDomDocument() requires a DOMDocument with a document element.');
+
+        XmlReader::fromDomDocument(new DOMDocument('1.0', 'UTF-8'));
     }
 }
