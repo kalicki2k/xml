@@ -8,6 +8,7 @@ arrives through a file or stream and a cursor is enough.
 Use this capability when you want to:
 
 - walk through XML incrementally instead of loading a full document tree
+- iterate non-overlapping record elements with `readElements()`
 - inspect namespace-aware element names and attributes at the current cursor position
 - extract one matching subtree into the existing reader, importer, validator, or writer flows
 
@@ -22,7 +23,7 @@ Choose `StreamingXmlReader` when:
 Stay with `XmlReader` when you want document-wide traversal, repeated random
 access, or direct document- and element-scoped queries.
 
-## Read Incrementally from a File
+## Process Matching Records with `readElements()`
 
 ```php
 <?php
@@ -34,17 +35,23 @@ use Kalle\Xml\Reader\StreamingXmlReader;
 $path = '/path/to/catalog.xml';
 $reader = StreamingXmlReader::fromFile($path);
 
-while ($reader->read()) {
-    if (!$reader->isStartElement('book')) {
-        continue;
-    }
-
-    $book = $reader->expandElement();
-
-    echo $reader->attributeValue('isbn') . "\n";
-    echo $book->firstChildElement('title')?->text() . "\n";
+foreach ($reader->readElements('book') as $bookRecord) {
+    echo $bookRecord->attributeValue('isbn') . "\n";
+    echo $bookRecord->toReaderElement()->firstChildElement('title')?->text() . "\n";
 }
 ```
+
+`readElements()` yields non-overlapping matching elements as `StreamedElement`
+records. If one yielded `<book>` contains nested `<book>` elements, those
+nested matches stay inside that yielded record and are not yielded separately.
+It keeps common attribute access small, while `toReaderElement()`,
+`toXmlString()`, `validate()`, and `toWriterElement()` bridge back into the regular reader,
+validation, import, and writer flows.
+
+Use the lower-level `read()` loop instead when you need every node, want to
+inspect text or comments directly, or intentionally want nested matching
+elements inside a yielded record subtree. Keep each workflow in one style:
+use `readElements()` for record loops, or `read()` for node-level cursor work.
 
 ## Read Incrementally from a Stream
 
@@ -111,7 +118,7 @@ Subtree extraction does not advance the cursor. After `expandElement()` or
 `extractElementXml()`, the reader is still positioned on the same start
 element. The next `read()` continues normal streaming traversal from there.
 
-## Filter and Re-Emit Matching Records
+## Filter, Validate, and Re-Emit Matching Records
 
 One common workflow is to stream through a large file, keep the cursor small,
 and only import the matching records that should be written again.
@@ -122,11 +129,12 @@ and only import the matching records that should be written again.
 declare(strict_types=1);
 
 use Kalle\Xml\Builder\XmlBuilder;
-use Kalle\Xml\Import\XmlImporter;
 use Kalle\Xml\Reader\StreamingXmlReader;
+use Kalle\Xml\Validation\XmlValidator;
 use Kalle\Xml\Writer\StreamingXmlWriter;
 
 $reader = StreamingXmlReader::fromFile('/path/to/feed.xml');
+$validator = XmlValidator::fromString($entrySchema);
 $output = fopen('php://stdout', 'wb');
 
 if (!is_resource($output)) {
@@ -137,26 +145,35 @@ $writer = StreamingXmlWriter::forStream($output);
 
 $writer->startElement('selection');
 
-while ($reader->read()) {
-    if (!$reader->isStartElement(XmlBuilder::qname('entry', 'urn:feed'))) {
+foreach ($reader->readElements(XmlBuilder::qname('entry', 'urn:feed')) as $entryRecord) {
+    if ($entryRecord->attributeValue('sku') === 'item-1002') {
         continue;
     }
 
-    if ($reader->attributeValue('sku') === 'item-1002') {
+    if (!$entryRecord->validate($validator)->isValid()) {
         continue;
     }
 
-    $writer->writeElement(XmlImporter::element($reader->expandElement()));
+    $writer->writeElement($entryRecord->toWriterElement());
 }
 
 $writer->endElement()->finish();
 ```
+
+For cursor-driven workflows, the same package pieces still compose cleanly:
+
+- `toReaderElement()` returns a regular `ReaderElement` for traversal and `findFirst()` / `findAll()`
+- `toXmlString()` returns the selected subtree as XML without a declaration
+- `validate()` is a thin shorthand for validating `toXmlString()` with `XmlValidator`
+- `toWriterElement()` reuses `XmlImporter` so `XmlWriter` and `StreamingXmlWriter` can re-emit selected records
 
 ## Boundaries
 
 `StreamingXmlReader` stays intentionally narrow:
 
 - it is a cursor, not a second full reader tree model
+- `readElements()` is record-oriented iteration, not a broad query or event framework
+- `StreamedElement` is a small record snapshot, not a second traversal or transformation API
 - it does not add broad query support directly on the streaming cursor
 - it does not mutate loaded XML
 - document-wide traversal and DOM-backed loading still belong to `XmlReader`

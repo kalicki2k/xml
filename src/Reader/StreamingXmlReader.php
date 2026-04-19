@@ -349,6 +349,34 @@ final class StreamingXmlReader
         return $this->attribute($name)?->value();
     }
 
+    /**
+     * Yields non-overlapping matching element records.
+     *
+     * If a yielded record contains descendant matches with the same element
+     * name, those descendants stay inside that yielded record and are not
+     * yielded separately by this iterator.
+     *
+     * @phpstan-impure
+     * @return iterable<StreamedElement>
+     */
+    public function readElements(string|QualifiedName $name): iterable
+    {
+        $qualifiedName = QualifiedName::forElement($name);
+
+        while ($this->advanceToNextMatchingStartElement($qualifiedName)) {
+            $depth = $this->depth();
+            $isEmptyElement = $this->isEmptyElement();
+
+            try {
+                yield StreamedElement::fromReaderElement($this->expandElement());
+            } finally {
+                if ($depth !== null && !$isEmptyElement && $this->isOpen() && $this->hasCurrentNode()) {
+                    $this->skipCurrentElementSubtree($depth);
+                }
+            }
+        }
+    }
+
     /** @phpstan-impure */
     public function extractElementXml(): string
     {
@@ -427,6 +455,30 @@ final class StreamingXmlReader
         }
 
         return $value !== '' ? $value : null;
+    }
+
+    /** @phpstan-impure */
+    private function advanceToNextMatchingStartElement(QualifiedName $qualifiedName): bool
+    {
+        while ($this->read()) {
+            if ($this->isStartElement($qualifiedName)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /** @phpstan-impure */
+    private function skipCurrentElementSubtree(int $depth): void
+    {
+        while ($this->read()) {
+            $currentDepth = $this->depth();
+
+            if ($currentDepth !== null && $currentDepth <= $depth) {
+                return;
+            }
+        }
     }
 
     private function materializeCurrentElement(string $method): DOMElement

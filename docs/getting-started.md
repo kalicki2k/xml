@@ -104,21 +104,20 @@ use Kalle\Xml\Reader\StreamingXmlReader;
 $path = '/path/to/catalog.xml';
 $reader = StreamingXmlReader::fromFile($path);
 
-while ($reader->read()) {
-    if (!$reader->isStartElement('book')) {
-        continue;
-    }
-
-    $book = $reader->expandElement();
-
-    echo $reader->attributeValue('isbn') . "\n";
-    echo $book->firstChildElement('title')?->text() . "\n";
+foreach ($reader->readElements('book') as $bookRecord) {
+    echo $bookRecord->attributeValue('isbn') . "\n";
+    echo $bookRecord->toReaderElement()->firstChildElement('title')?->text() . "\n";
 }
 ```
 
 Use `StreamingXmlReader` when a full in-memory tree would be wasteful. The
-cursor stays small, and `expandElement()` plus `extractElementXml()` are the
-bridges back into the regular reader, import, validation, and writer flows.
+cursor stays small, `readElements()` covers common record-by-record workflows,
+and `expandElement()` plus `extractElementXml()` remain available when the
+lower-level cursor is clearer.
+
+`readElements()` is intentionally non-overlapping: if one yielded `<book>`
+contains nested `<book>` elements, those nested matches stay inside the yielded
+record instead of being yielded separately.
 
 ## 6. Load Your First Document with `XmlReader`
 

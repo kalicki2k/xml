@@ -5,7 +5,7 @@ agree before a tag is created.
 
 ## Before Tagging
 
-- make sure `README.md`, `docs/`, `examples/`, and `composer.json` describe the same package scope and terminology
+- make sure `CHANGELOG.md`, `README.md`, `docs/`, `examples/`, and `composer.json` describe the same package scope and terminology
 - confirm that public guides and examples use only the final public API names
 - confirm that writer-side docs and examples keep the final split explicit:
   `XmlBuilder` builds, `XmlWriter` serializes complete documents, and `StreamingXmlWriter` streams incrementally
@@ -16,13 +16,14 @@ agree before a tag is created.
 - confirm that reader-query examples still match the documented `findFirst()` / `findAll()` API
 - confirm that import examples still match the documented `XmlImporter` API
 - confirm that validation examples still match the documented `XmlValidator` API
+- build any release archive from a clean worktree only; do not package `vendor/`, caches, benchmark output, or editor files
 
 ## Required QA
 
 Run the standard quality gates from the repository root:
 
 ```bash
-composer validate --strict
+composer validate --strict --no-check-lock
 composer test
 composer stan
 composer cs-check
@@ -30,31 +31,32 @@ composer cs-check
 
 ## Recommended Smoke Checks
 
-Use the smoke checks that match the release surface:
+Use a small set of example runs that covers the public release surface:
 
 ```bash
 php examples/catalog.php > /tmp/kalle-example-catalog.xml
+php examples/namespaced-feed.php
+php examples/streaming-catalog.php > /tmp/kalle-example-streaming-catalog.xml
+php examples/streaming-feed.php > /tmp/kalle-example-streaming-feed.xml
+php examples/streaming-to-file.php
+php examples/streaming-reader-catalog.php
+php examples/streaming-reader-invoice.php
+php examples/streaming-reader-feed-export.php
+php examples/reading-catalog.php
 php examples/query-feed.php
 php examples/query-invoice.php
 php examples/import-feed-entry.php
 php examples/import-invoice-party.php
 php examples/dom-roundtrip.php
+php examples/dom-feed-query.php
+php examples/dom-invoice-stream.php
 php examples/validate-catalog.php
 php examples/validate-feed.php
-php examples/reading-catalog.php
-php examples/reading-config.php
-php examples/reading-feed.php
-php examples/reading-stream.php
-php examples/streaming-catalog.php > /tmp/kalle-example-streaming-catalog.xml
-php examples/streaming-feed.php > /tmp/kalle-example-streaming-feed.xml
-php examples/streaming-to-file.php
-php benchmarks/write-performance.php small 1
-php benchmarks/document-vs-streaming.php 10 1
 ```
 
 ## Final Release Check
 
 - review `git status` and the final diff
 - check commit messages for accidental work-in-progress noise
-- keep benchmark output out of the repository
+- keep release archives, benchmark output, and local caches out of the repository
 - create the release commit and tag only after docs and QA are in sync

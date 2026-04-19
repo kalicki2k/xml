@@ -36,9 +36,11 @@ Use `StreamingXmlReader` when XML input is large, incremental, or should be
 processed one subtree at a time.
 
 - `StreamingXmlReader` reads from files and stream resources through a cursor-based API.
+- `readElements()` yields non-overlapping exact-name `StreamedElement` records for large-XML workflows.
 - `StreamingNodeType` describes the current native XML node type.
 - `expandElement()` materializes one matching start element back into a regular `ReaderElement`.
 - `extractElementXml()` returns one matching start element subtree as XML without loading the whole document tree.
+- `StreamedElement` keeps common attribute access small and offers explicit conversions back into reader, validation, and writer flows.
 
 Continue with [Streaming reader](streaming-reader.md).
 

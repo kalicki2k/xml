@@ -15,7 +15,7 @@ documents with `XmlWriter`, or bypass the tree and stream imperatively with
 
 ## Reading XML
 
-- Use `StreamingXmlReader` when input is large or incremental and cursor-style processing, subtree extraction, or filtered export is enough.
+- Use `StreamingXmlReader` when input is large or incremental and cursor-style processing, non-overlapping record-by-record iteration through `readElements()`, subtree extraction, or filtered export is enough.
 - Use `XmlReader` when you need a loaded tree for read-only traversal, parent/child navigation, or queries.
 - Use `findAll()` and `findFirst()` when filtered element lookups are clearer than repeated traversal.
 

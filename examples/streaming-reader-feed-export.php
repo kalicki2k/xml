@@ -5,7 +5,6 @@ declare(strict_types=1);
 require dirname(__DIR__) . '/vendor/autoload.php';
 
 use Kalle\Xml\Builder\XmlBuilder;
-use Kalle\Xml\Import\XmlImporter;
 use Kalle\Xml\Reader\StreamingXmlReader;
 use Kalle\Xml\Writer\StreamingXmlWriter;
 use Kalle\Xml\Writer\WriterConfig;
@@ -56,17 +55,13 @@ try {
 
     $writer->startElement('selection');
 
-    while ($reader->read()) {
-        if (!$reader->isStartElement(XmlBuilder::qname('entry', 'urn:feed'))) {
-            continue;
-        }
-
-        if ($reader->attributeValue('sku') === 'item-1002') {
+    foreach ($reader->readElements(XmlBuilder::qname('entry', 'urn:feed')) as $entryRecord) {
+        if ($entryRecord->attributeValue('sku') === 'item-1002') {
             continue;
         }
 
         $writer->writeElement(
-            XmlImporter::element($reader->expandElement())->attribute('selected', true),
+            $entryRecord->toWriterElement()->attribute('selected', true),
         );
     }
 

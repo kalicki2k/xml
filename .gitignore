@@ -9,6 +9,10 @@
 /coverage/
 /build/
 /dist/
+/*.zip
+/*.tar
+/*.tar.gz
+/*.tgz
 
 /.idea/
 /.vscode/

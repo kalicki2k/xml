@@ -11,7 +11,7 @@ It provides:
 - `XmlBuilder` for immutable, tree-based XML construction
 - `XmlWriter` for serializing built documents to strings, files, or streams
 - `StreamingXmlWriter` for incremental XML output to files and streams
-- `StreamingXmlReader` for incremental, cursor-based XML reading from files and streams
+- `StreamingXmlReader` for incremental, cursor-based XML reading, subtree extraction, and non-overlapping record iteration via `readElements()`
 - `XmlReader` for read-only traversal of existing XML
 - `XmlDomBridge` plus DOM entry points on `XmlReader` for explicit DOM interop
 - `findAll()` and `findFirst()` for small namespace-aware element queries on the reader model
@@ -38,7 +38,7 @@ Included:
 - tree-based XML building with `XmlBuilder`
 - document serialization with `XmlWriter::toString()`, `toFile()`, and `toStream()`
 - streaming XML writing with `StreamingXmlWriter`
-- streaming XML reading with `StreamingXmlReader`
+- streaming XML reading and non-overlapping record iteration with `StreamingXmlReader`
 - read-only XML loading with `XmlReader`
 - explicit DOM interop with `XmlDomBridge` and `XmlReader::fromDomDocument()` / `fromDomElement()`
 - small namespace-aware element queries with `findAll()` and `findFirst()`
@@ -79,7 +79,7 @@ echo XmlWriter::toString($document);
 - Use `XmlBuilder` when you want to build an immutable XML tree in memory, reuse subtrees, or keep fixtures readable.
 - Use `XmlWriter` when you already have a built `XmlDocument` and want a string, file, or stream.
 - Use `StreamingXmlWriter` when output is incremental, large, or should go straight to a file or stream.
-- Use `StreamingXmlReader` when input is large or incremental and you only need cursor-style inspection, subtree extraction, or filtered export.
+- Use `StreamingXmlReader` when input is large or incremental and you only need cursor-style inspection, non-overlapping record-by-record processing through `readElements()`, subtree extraction, or filtered export.
 - Use `XmlReader` when you want a loaded tree for traversal, parent/child navigation, or queries.
 - Use DOM interop when writer-side or reader-side flows need to connect to existing `DOMDocument` or `DOMElement` values without adopting a mutable DOM wrapper.
 - Use reader queries when `findAll()` or `findFirst()` is clearer than repeated traversal.
@@ -102,6 +102,7 @@ incremental streaming stay separate so the package stays compact.
 - [Choosing an API](docs/concepts/choosing-an-api.md)
 - [Work with Namespaces](docs/concepts/namespaces.md)
 - [API reference](docs/api/README.md)
+- [Changelog](CHANGELOG.md)
 - [Examples](examples/README.md)
 - Streaming reader examples: [streaming-reader-catalog.php](examples/streaming-reader-catalog.php), [streaming-reader-invoice.php](examples/streaming-reader-invoice.php), [streaming-reader-feed-export.php](examples/streaming-reader-feed-export.php)
 - DOM examples: [dom-roundtrip.php](examples/dom-roundtrip.php), [dom-feed-query.php](examples/dom-feed-query.php), [dom-invoice-stream.php](examples/dom-invoice-stream.php)

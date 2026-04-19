@@ -107,4 +107,55 @@ final class StreamingXmlReaderTest extends TestCase
             fclose($stream);
         }
     }
+
+    public function testReadElementsSkipsNestedMatchingDescendantsInsideEachYieldedRecord(): void
+    {
+        $stream = fopen('php://temp', 'wb+');
+
+        self::assertIsResource($stream);
+        self::assertNotFalse(fwrite($stream, '<catalog><book id="1"><book id="nested"/></book><book id="2"/></catalog>'));
+        rewind($stream);
+
+        try {
+            $reader = StreamingXmlReader::fromStream($stream);
+            $ids = [];
+
+            foreach ($reader->readElements('book') as $bookRecord) {
+                $ids[] = $bookRecord->attributeValue('id');
+            }
+
+            self::assertSame(['1', '2'], $ids);
+        } finally {
+            fclose($stream);
+        }
+    }
+
+    public function testReadElementsKeepsSkippingTheYieldedSubtreeWhenIterationStopsEarly(): void
+    {
+        $stream = fopen('php://temp', 'wb+');
+
+        self::assertIsResource($stream);
+        self::assertNotFalse(fwrite($stream, '<catalog><book id="1"><book id="nested"/></book><book id="2"/></catalog>'));
+        rewind($stream);
+
+        try {
+            $reader = StreamingXmlReader::fromStream($stream);
+
+            foreach ($reader->readElements('book') as $bookRecord) {
+                self::assertSame('1', $bookRecord->attributeValue('id'));
+
+                break;
+            }
+
+            $remainingIds = [];
+
+            foreach ($reader->readElements('book') as $bookRecord) {
+                $remainingIds[] = $bookRecord->attributeValue('id');
+            }
+
+            self::assertSame(['2'], $remainingIds);
+        } finally {
+            fclose($stream);
+        }
+    }
 }

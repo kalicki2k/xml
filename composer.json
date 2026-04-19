@@ -1,6 +1,6 @@
 {
     "name": "kalle/xml",
-    "description": "A compact XML library for PHP with immutable and streaming writers, a streaming reader, a read-only tree reader, small XPath-style reader queries, explicit DOM interop, a reader-to-writer import bridge, and XSD validation",
+    "description": "Compact XML library for PHP with immutable and streaming writers, tree and streaming readers, reader queries, DOM interop, import, and XSD validation",
     "keywords": [
         "xml",
         "writer",
@@ -8,12 +8,11 @@
         "dom",
         "interop",
         "query",
-        "xpath",
         "import",
         "validation",
         "xsd",
         "streaming",
-        "document-model",
+        "stream-processing",
         "php"
     ],
     "type": "library",

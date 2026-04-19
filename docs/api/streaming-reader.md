@@ -12,6 +12,7 @@ Important methods:
 - `fromFile(string $path): StreamingXmlReader`
 - `fromStream(mixed $stream): StreamingXmlReader`
 - `read(): bool`
+- `readElements(string|QualifiedName $name): iterable<StreamedElement>`
 - `isOpen(): bool`
 - `hasCurrentNode(): bool`
 - `close(): void`
@@ -44,6 +45,9 @@ Element-oriented helpers:
 Behavior notes:
 
 - `read()` advances one native XML node at a time and returns `false` at normal end of input.
+- `readElements()` yields non-overlapping matching start elements as `StreamedElement` snapshots.
+- once `readElements('entry')` yields one `<entry>`, nested `<entry>` descendants stay inside that yielded record and are not yielded separately.
+- treat `readElements()` as one record loop; if the workflow needs node-level cursor control, use `read()` instead.
 - `isOpen()` reports whether the cursor can still read.
 - `hasCurrentNode()` reports whether `read()` has positioned the cursor on a current node.
 - Current-node accessors such as `nodeType()`, `name()`, and `namespaceUri()` return `null` before the first successful `read()`, after normal end of input, or after `close()`.
@@ -55,6 +59,35 @@ Behavior notes:
 - Element helpers return `false`, `null`, or `[]` when the cursor is not on a current start element.
 - subtree extraction does not advance the cursor; the reader stays on the same start element until the next `read()`.
 - `close()` is idempotent.
+- use `read()` directly when you need every node or intentionally want nested matching elements instead of record-style subtree iteration.
+- `readElements()` is exact-name record iteration, not a general streaming query layer.
+
+## `StreamedElement`
+
+`StreamedElement` is the compact record snapshot yielded by `readElements()`.
+
+Important methods:
+
+- `name(): string`
+- `qualifiedName(): QualifiedName`
+- `localName(): string`
+- `prefix(): ?string`
+- `namespaceUri(): ?string`
+- `attributes(): array`
+- `hasAttribute(string|QualifiedName $name): bool`
+- `attribute(string|QualifiedName $name): ?Attribute`
+- `attributeValue(string|QualifiedName $name): ?string`
+- `toReaderElement(): ReaderElement`
+- `toXmlString(): string`
+- `toWriterElement(): Element`
+- `validate(XmlValidator $validator): ValidationResult`
+
+Behavior notes:
+
+- `toReaderElement()` returns the regular read-only subtree model for traversal and `findFirst()` / `findAll()`.
+- `toXmlString()` returns the selected subtree as XML without a declaration.
+- `toWriterElement()` reuses `XmlImporter` to move the record into the immutable writer-side model.
+- `validate()` is only a thin shorthand for `$validator->validateString($record->toXmlString())`.
 
 Common exceptions:
 
@@ -90,6 +123,22 @@ while ($reader->read()) {
     $entry = $reader->expandElement();
 
     echo $entry->attributeValue('sku') . "\n";
+}
+```
+
+Record-oriented example:
+
+```php
+<?php
+
+declare(strict_types=1);
+
+foreach ($reader->readElements('entry') as $entryRecord) {
+    if ($entryRecord->attributeValue('sku') === 'item-1002') {
+        continue;
+    }
+
+    echo $entryRecord->toReaderElement()->findFirst('./title')?->text() . "\n";
 }
 ```
 

@@ -30,7 +30,7 @@ Use them alongside the docs:
 
 - `streaming-reader-catalog.php` reads a catalog file incrementally and expands matching `<book>` elements into the regular reader model.
 - `streaming-reader-invoice.php` reads a namespaced invoice stream incrementally, expands one subtree, and imports it back into the writer model.
-- `streaming-reader-feed-export.php` streams a namespace-aware feed, filters matching `<entry>` records, and writes the imported results back out incrementally.
+- `streaming-reader-feed-export.php` streams a namespace-aware feed through non-overlapping `readElements()` records, filters matching `<entry>` records, and writes the imported results back out incrementally.
 
 ## Tree Reader
 

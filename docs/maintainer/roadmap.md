@@ -11,6 +11,7 @@ import bridge, and compact XSD validation as separate capabilities:
 - `XmlWriter` for whole-document serialization
 - `StreamingXmlWriter` for incremental XML writing
 - `StreamingXmlReader` for incremental, cursor-based XML reading from files and streams
+- `readElements()` and `StreamedElement` for compact record-by-record stream processing on top of the streaming reader
 - `XmlReader` for namespace-aware document and element traversal
 - `XmlDomBridge` plus DOM entry points on `XmlReader` for explicit DOM interop
 - `findAll()` and `findFirst()` on `ReaderDocument` and `ReaderElement` for small XPath-style element queries
@@ -23,6 +24,7 @@ The current package scope includes:
 - incremental, namespace-aware streaming XML reading from files and streams
 - a compact streaming cursor API centered on `read()`, `nodeType()`, `isStartElement()`, `expandElement()`, and `extractElementXml()`
 - subtree extraction from `StreamingXmlReader` back into the existing `ReaderElement`, `XmlReader`, `XmlImporter`, `XmlValidator`, and writer flows
+- compact record-by-record iteration centered on `StreamingXmlReader::readElements()` and `StreamedElement`
 - read-only document and element traversal without reader concerns leaking into `XmlBuilder`
 - namespace-aware element names, attribute access, and in-scope namespace inspection
 - compact reader traversal centered around `rootElement()`, `firstChildElement()`, and `childElements()`

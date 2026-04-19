@@ -8,6 +8,7 @@ use Kalle\Xml\Builder\XmlBuilder;
 use Kalle\Xml\Import\XmlImporter;
 use Kalle\Xml\Reader\StreamingXmlReader;
 use Kalle\Xml\Reader\XmlReader;
+use Kalle\Xml\Validation\XmlValidator;
 use Kalle\Xml\Writer\StreamingXmlWriter;
 use Kalle\Xml\Writer\WriterConfig;
 use Kalle\Xml\Writer\XmlWriter;
@@ -244,6 +245,75 @@ final class StreamingXmlReaderRealisticIntegrationTest extends TestCase
         }
     }
 
+    public function testItProcessesNonOverlappingEntryRecordsThroughReadElements(): void
+    {
+        $stream = fopen('php://temp', 'wb+');
+
+        self::assertIsResource($stream);
+        self::assertNotFalse(fwrite($stream, $this->feedFixture()));
+        rewind($stream);
+
+        try {
+            $reader = StreamingXmlReader::fromStream($stream);
+            $validator = XmlValidator::fromString($this->feedEntrySchema());
+            $exportedEntries = [];
+            $selection = $this->streamToString(
+                WriterConfig::compact(emitDeclaration: false),
+                static function (StreamingXmlWriter $writer) use ($reader, $validator, &$exportedEntries): void {
+                    $writer->startElement('selection');
+
+                    foreach ($reader->readElements(XmlBuilder::qname('entry', self::FEED_NS)) as $entryRecord) {
+                        if ($entryRecord->attributeValue('sku') === 'item-1002') {
+                            continue;
+                        }
+
+                        self::assertTrue($entryRecord->validate($validator)->isValid());
+
+                        $exportedEntries[] = [
+                            'sku' => $entryRecord->attributeValue('sku'),
+                            'title' => $entryRecord->toReaderElement()->findFirst('./feed:title', ['feed' => self::FEED_NS])?->text(),
+                            'xml' => $entryRecord->toXmlString(),
+                        ];
+
+                        $writer->writeElement(
+                            $entryRecord->toWriterElement()->attribute('selected', true),
+                        );
+                    }
+
+                    $writer->endElement();
+                },
+            );
+
+            self::assertSame([
+                [
+                    'sku' => 'item-1001',
+                    'title' => 'Blue mug',
+                    'xml' => '<entry xmlns="urn:feed" xmlns:xlink="' . self::XLINK_NS . '" xmlns:dc="' . self::DC_NS . '" xmlns:media="' . self::MEDIA_NS . '" sku="item-1001" xlink:href="https://example.com/products/item-1001">
+        <title>Blue mug</title>
+        <dc:identifier>item-1001</dc:identifier>
+        <media:thumbnail xlink:href="https://cdn.example.com/products/item-1001.jpg" width="320" height="180"/>
+    </entry>',
+                ],
+                [
+                    'sku' => 'item-1003',
+                    'title' => 'Desk lamp',
+                    'xml' => '<entry xmlns="urn:feed" xmlns:xlink="' . self::XLINK_NS . '" xmlns:dc="' . self::DC_NS . '" xmlns:media="' . self::MEDIA_NS . '" sku="item-1003" xlink:href="https://example.com/products/item-1003">
+        <title>Desk lamp</title>
+        <dc:identifier>item-1003</dc:identifier>
+        <media:thumbnail xlink:href="https://cdn.example.com/products/item-1003.jpg" width="320" height="180"/>
+    </entry>',
+                ],
+            ], $exportedEntries);
+
+            self::assertSame(
+                '<selection><entry xmlns="urn:feed" xmlns:dc="' . self::DC_NS . '" xmlns:media="' . self::MEDIA_NS . '" xmlns:xlink="' . self::XLINK_NS . '" sku="item-1001" xlink:href="https://example.com/products/item-1001" selected="true"><title>Blue mug</title><dc:identifier>item-1001</dc:identifier><media:thumbnail xlink:href="https://cdn.example.com/products/item-1001.jpg" width="320" height="180"/></entry><entry xmlns="urn:feed" xmlns:dc="' . self::DC_NS . '" xmlns:media="' . self::MEDIA_NS . '" xmlns:xlink="' . self::XLINK_NS . '" sku="item-1003" xlink:href="https://example.com/products/item-1003" selected="true"><title>Desk lamp</title><dc:identifier>item-1003</dc:identifier><media:thumbnail xlink:href="https://cdn.example.com/products/item-1003.jpg" width="320" height="180"/></entry></selection>',
+                $selection,
+            );
+        } finally {
+            fclose($stream);
+        }
+    }
+
     private function catalogFixture(): string
     {
         return <<<'XML'
@@ -325,6 +395,29 @@ XML;
     </cac:InvoiceLine>
 </Invoice>
 XML;
+    }
+
+    private function feedEntrySchema(): string
+    {
+        return <<<'XSD'
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="urn:feed"
+           xmlns="urn:feed"
+           elementFormDefault="qualified"
+           attributeFormDefault="unqualified">
+    <xs:element name="entry">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="title" type="xs:string"/>
+                <xs:any namespace="##other" minOccurs="0" maxOccurs="unbounded" processContents="lax"/>
+            </xs:sequence>
+            <xs:attribute name="sku" type="xs:string" use="required"/>
+            <xs:anyAttribute namespace="##other" processContents="lax"/>
+        </xs:complexType>
+    </xs:element>
+</xs:schema>
+XSD;
     }
 
     /**
