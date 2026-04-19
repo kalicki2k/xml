@@ -14,7 +14,7 @@ The import API bridges reader-side values back into the writer-side model.
 Behavior notes:
 
 - Imported results are normal `XmlDocument` and `Element` values.
-- They work with `Xml`, `StreamingXmlWriter`, and `XmlValidator`.
+- They work with `XmlBuilder`, `XmlWriter`, `StreamingXmlWriter`, and `XmlValidator`.
 - Element names, attributes, text, comments, CDATA, processing instructions, and root-level namespace declarations are preserved across the bridge.
 
 Small example:

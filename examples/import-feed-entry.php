@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 
-use Kalle\Xml\Builder\Xml;
+use Kalle\Xml\Builder\XmlBuilder;
 use Kalle\Xml\Import\XmlImporter;
 use Kalle\Xml\Reader\XmlReader;
+use Kalle\Xml\Writer\XmlWriter;
 
 $document = XmlReader::fromString(
     <<<'XML'
@@ -36,4 +37,6 @@ $writerElement = XmlImporter::element($entry)
     ->attribute('exported', true)
     ->attribute('sku', 'item-1002-copy');
 
-echo Xml::document($writerElement)->withoutDeclaration()->toString() . "\n";
+echo XmlWriter::toString(
+    XmlBuilder::document($writerElement)->withoutDeclaration(),
+) . "\n";

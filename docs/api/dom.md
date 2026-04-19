@@ -6,7 +6,8 @@ reader, import, and validation surfaces.
 ## `XmlDomBridge`
 
 `XmlDomBridge` exports writer-side values into native DOM documents.
-It stays separate from `Xml`, `XmlReader`, `XmlImporter`, and `XmlValidator`
+It stays separate from `XmlBuilder`, `XmlReader`, `XmlImporter`,
+and `XmlValidator`
 so DOM interop remains one small bridge instead of a wider wrapper layer.
 
 Important methods:

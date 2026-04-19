@@ -12,6 +12,8 @@ use Kalle\Xml\Exception\ParseException;
 use Kalle\Xml\Exception\StreamingReaderException;
 use Kalle\Xml\Exception\StreamReadException;
 use Kalle\Xml\Name\QualifiedName;
+use LibXMLError;
+use Throwable;
 use XMLReader as PhpXmlReader;
 
 use function fclose;
@@ -119,7 +121,7 @@ final class StreamingXmlReader
                     $errors,
                 ));
             }
-        } catch (\Throwable $exception) {
+        } catch (Throwable $exception) {
             StreamingReaderStreamRegistry::unregister($streamUri);
 
             throw $exception;
@@ -379,7 +381,7 @@ final class StreamingXmlReader
     }
 
     /**
-     * @param list<\LibXMLError> $errors
+     * @param list<LibXMLError> $errors
      */
     private static function buildOpenFailureMessage(
         string $baseMessage,

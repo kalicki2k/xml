@@ -53,14 +53,14 @@ while ($reader->read()) {
 
 declare(strict_types=1);
 
-use Kalle\Xml\Builder\Xml;
+use Kalle\Xml\Builder\XmlBuilder;
 use Kalle\Xml\Import\XmlImporter;
 use Kalle\Xml\Reader\StreamingXmlReader;
 
 $reader = StreamingXmlReader::fromStream($stream);
 
 while ($reader->read()) {
-    if (!$reader->isStartElement(Xml::qname('entry', 'urn:feed'))) {
+    if (!$reader->isStartElement(XmlBuilder::qname('entry', 'urn:feed'))) {
         continue;
     }
 
@@ -105,7 +105,7 @@ That lets you keep using:
 - `XmlImporter::element()` to move back into the writer model
 - `XmlReader::fromString()` when a full subtree document context is clearer
 - `XmlValidator::validateString()` when selected records need schema validation
-- `Xml::document(...)` or `StreamingXmlWriter` for output
+- `XmlWriter::toString(XmlBuilder::document(...))` or `StreamingXmlWriter` for output
 
 Subtree extraction does not advance the cursor. After `expandElement()` or
 `extractElementXml()`, the reader is still positioned on the same start
@@ -121,18 +121,24 @@ and only import the matching records that should be written again.
 
 declare(strict_types=1);
 
-use Kalle\Xml\Builder\Xml;
+use Kalle\Xml\Builder\XmlBuilder;
 use Kalle\Xml\Import\XmlImporter;
 use Kalle\Xml\Reader\StreamingXmlReader;
 use Kalle\Xml\Writer\StreamingXmlWriter;
 
 $reader = StreamingXmlReader::fromFile('/path/to/feed.xml');
-$writer = StreamingXmlWriter::forString();
+$output = fopen('php://stdout', 'wb');
+
+if (!is_resource($output)) {
+    throw new RuntimeException('Could not open stdout for XML output.');
+}
+
+$writer = StreamingXmlWriter::forStream($output);
 
 $writer->startElement('selection');
 
 while ($reader->read()) {
-    if (!$reader->isStartElement(Xml::qname('entry', 'urn:feed'))) {
+    if (!$reader->isStartElement(XmlBuilder::qname('entry', 'urn:feed'))) {
         continue;
     }
 
@@ -144,8 +150,6 @@ while ($reader->read()) {
 }
 
 $writer->endElement()->finish();
-
-echo $writer->toString();
 ```
 
 ## Boundaries

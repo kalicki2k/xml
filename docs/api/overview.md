@@ -8,7 +8,7 @@ grow into a broad XML framework.
 
 Use the builder-side types when you are creating XML in memory.
 
-- `Xml` is the static entry point for building documents, elements, names, and common node types.
+- `XmlBuilder` is the static entry point for building documents, elements, names, and common node types.
 - `Element` is the immutable element node used to compose a document tree.
 - `XmlDocument` is the immutable document wrapper around a root `Element` and an optional declaration.
 - `QualifiedName` represents an explicit namespace-aware name.
@@ -16,13 +16,17 @@ Use the builder-side types when you are creating XML in memory.
 
 Continue with [Builder](builder.md).
 
-## Streaming Output
+## Writer Output
 
-Use `StreamingXmlWriter` when XML should be emitted incrementally or written
-directly to a string buffer, file path, or stream resource.
+Use `XmlWriter` when a complete `XmlDocument` is already built and should be
+serialized in one step.
 
-- `StreamingXmlWriter` handles document writing, manual streaming, and mixed workflows that write prebuilt `Element` subtrees.
+- `XmlWriter` serializes `XmlDocument` instances to strings, files, and streams.
+- `StreamingXmlWriter` handles manual incremental output and mixed workflows that write prebuilt `Element` subtrees to file and stream targets.
 - `WriterConfig` controls compact vs pretty output, declaration emission, indentation, and empty-element style.
+
+The split is deliberate: build with `XmlBuilder`, serialize complete documents
+with `XmlWriter`, or stream incrementally with `StreamingXmlWriter`.
 
 Continue with [Writer](writer.md).
 

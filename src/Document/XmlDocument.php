@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace Kalle\Xml\Document;
 
 use Kalle\Xml\Node\Element;
-use Kalle\Xml\Writer\StreamingXmlWriter;
-use Kalle\Xml\Writer\WriterConfig;
 
 final readonly class XmlDocument
 {
@@ -50,28 +48,5 @@ final readonly class XmlDocument
         }
 
         return new self($this->root, null);
-    }
-
-    public function toString(?WriterConfig $config = null): string
-    {
-        $writer = StreamingXmlWriter::forString($config);
-        $writer->writeDocument($this);
-        $writer->finish();
-
-        return $writer->toString();
-    }
-
-    public function saveToFile(string $path, ?WriterConfig $config = null): void
-    {
-        $writer = StreamingXmlWriter::forFile($path, $config);
-        $writer->writeDocument($this);
-        $writer->finish();
-    }
-
-    public function saveToStream(mixed $stream, ?WriterConfig $config = null): void
-    {
-        $writer = StreamingXmlWriter::forStream($stream, $config);
-        $writer->writeDocument($this);
-        $writer->finish();
     }
 }

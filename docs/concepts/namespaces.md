@@ -15,27 +15,27 @@ queries that need explicit namespace aliases.
 
 ## Write Namespaced XML
 
-Use `Xml::qname()` for namespace-aware element and attribute names.
+Use `XmlBuilder::qname()` for namespace-aware element and attribute names.
 
 ```php
 <?php
 
 declare(strict_types=1);
 
-use Kalle\Xml\Builder\Xml;
+use Kalle\Xml\Builder\XmlBuilder;
 
-$feed = Xml::element(Xml::qname('feed', 'urn:feed'))
+$feed = XmlBuilder::element(XmlBuilder::qname('feed', 'urn:feed'))
     ->declareDefaultNamespace('urn:feed')
     ->declareNamespace('media', 'urn:media')
     ->child(
-        Xml::element(Xml::qname('entry', 'urn:feed'))
+        XmlBuilder::element(XmlBuilder::qname('entry', 'urn:feed'))
             ->child(
-                Xml::element(Xml::qname('thumbnail', 'urn:media', 'media')),
+                XmlBuilder::element(XmlBuilder::qname('thumbnail', 'urn:media', 'media')),
             ),
     );
 ```
 
-- Use `Xml::qname()` for namespace-aware element and attribute names.
+- Use `XmlBuilder::qname()` for namespace-aware element and attribute names.
 - Use `declareDefaultNamespace()` for an explicit default namespace declaration.
 - Use `declareNamespace()` for explicit prefixed declarations.
 - Default namespaces apply to elements, not attributes.
@@ -87,7 +87,7 @@ The namespace support is explicit by design:
 
 - default namespaces never apply to attributes
 - query expressions still follow XPath namespace rules
-- namespace-aware names should use `Xml::qname()` or `QualifiedName`, not raw prefixed strings
+- namespace-aware names should use `XmlBuilder::qname()` or `QualifiedName`, not raw prefixed strings
 - import preserves namespace structure, but it does not widen the reader or writer APIs into a broader XML framework
 
 ## Related

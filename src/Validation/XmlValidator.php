@@ -12,6 +12,7 @@ use Kalle\Xml\Exception\FileReadException;
 use Kalle\Xml\Exception\InvalidSchemaException;
 use Kalle\Xml\Exception\ParseException;
 use Kalle\Xml\Exception\StreamReadException;
+use Kalle\Xml\Writer\XmlWriter;
 use LibXMLError;
 use LogicException;
 use ValueError;
@@ -136,7 +137,7 @@ final readonly class XmlValidator
     public function validateXmlDocument(XmlDocument $document): ValidationResult
     {
         return $this->validateDomDocument(
-            self::loadXmlDocument($document->toString(), 'XmlDocument input'),
+            self::loadXmlDocument(XmlWriter::toString($document), 'XmlDocument input'),
         );
     }
 

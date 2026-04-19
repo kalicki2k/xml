@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Kalle\Xml\Tests\Integration;
 
-use Kalle\Xml\Builder\Xml;
+use Kalle\Xml\Builder\XmlBuilder;
 use Kalle\Xml\Exception\ParseException;
 use Kalle\Xml\Import\XmlImporter;
 use Kalle\Xml\Reader\StreamingNodeType;
@@ -12,6 +12,7 @@ use Kalle\Xml\Reader\StreamingXmlReader;
 use Kalle\Xml\Reader\XmlReader;
 use Kalle\Xml\Validation\XmlValidator;
 use Kalle\Xml\Writer\WriterConfig;
+use Kalle\Xml\Writer\XmlWriter;
 use PHPUnit\Framework\TestCase;
 
 use function fclose;
@@ -44,7 +45,7 @@ XML,
             $reader = StreamingXmlReader::fromStream($stream);
 
             while ($reader->read()) {
-                if (!$reader->isStartElement(Xml::qname('entry', 'urn:feed'))) {
+                if (!$reader->isStartElement(XmlBuilder::qname('entry', 'urn:feed'))) {
                     continue;
                 }
 
@@ -54,11 +55,11 @@ XML,
                 self::assertSame('urn:feed', $reader->namespaceUri());
                 self::assertTrue($reader->hasAttribute('rel'));
                 self::assertSame('self', $reader->attributeValue('rel'));
-                self::assertFalse($reader->hasAttribute(Xml::qname('rel', 'urn:feed', 'feed')));
-                self::assertNull($reader->attributeValue(Xml::qname('rel', 'urn:feed', 'feed')));
+                self::assertFalse($reader->hasAttribute(XmlBuilder::qname('rel', 'urn:feed', 'feed')));
+                self::assertNull($reader->attributeValue(XmlBuilder::qname('rel', 'urn:feed', 'feed')));
                 self::assertSame(
                     'en',
-                    $reader->attributeValue(Xml::qname('lang', 'http://www.w3.org/XML/1998/namespace', 'xml')),
+                    $reader->attributeValue(XmlBuilder::qname('lang', 'http://www.w3.org/XML/1998/namespace', 'xml')),
                 );
 
                 return;
@@ -89,7 +90,7 @@ XML,
             $reader = StreamingXmlReader::fromStream($stream);
 
             while ($reader->read()) {
-                if (!$reader->isStartElement(Xml::qname('entry', 'urn:feed'))) {
+                if (!$reader->isStartElement(XmlBuilder::qname('entry', 'urn:feed'))) {
                     continue;
                 }
 
@@ -97,16 +98,16 @@ XML,
 
                 self::assertCount(3, $attributes);
                 self::assertTrue($reader->hasAttribute('sku'));
-                self::assertTrue($reader->hasAttribute(Xml::qname('href', 'urn:xlink', 'xlink')));
-                self::assertTrue($reader->hasAttribute(Xml::qname('width', 'urn:media', 'media')));
+                self::assertTrue($reader->hasAttribute(XmlBuilder::qname('href', 'urn:xlink', 'xlink')));
+                self::assertTrue($reader->hasAttribute(XmlBuilder::qname('width', 'urn:media', 'media')));
                 self::assertSame('item-1002', $reader->attributeValue('sku'));
                 self::assertSame(
                     'https://example.com/items/2',
-                    $reader->attributeValue(Xml::qname('href', 'urn:xlink', 'xlink')),
+                    $reader->attributeValue(XmlBuilder::qname('href', 'urn:xlink', 'xlink')),
                 );
                 self::assertSame(
                     '640',
-                    $reader->attributeValue(Xml::qname('width', 'urn:media', 'media')),
+                    $reader->attributeValue(XmlBuilder::qname('width', 'urn:media', 'media')),
                 );
                 self::assertNull($reader->attributeValue('missing'));
                 self::assertFalse($reader->hasAttribute('missing'));
@@ -157,7 +158,7 @@ XML,
             $seen = [];
 
             while ($reader->read()) {
-                if ($reader->isStartElement(Xml::qname('item', 'urn:cfg', 'cfg'))) {
+                if ($reader->isStartElement(XmlBuilder::qname('item', 'urn:cfg', 'cfg'))) {
                     $seen[] = [
                         'kind' => 'namespaced',
                         'name' => $reader->name(),
@@ -221,7 +222,7 @@ XML,
             $validated = null;
 
             while ($reader->read()) {
-                if (!$reader->isStartElement(Xml::qname('entry', 'urn:feed'))) {
+                if (!$reader->isStartElement(XmlBuilder::qname('entry', 'urn:feed'))) {
                     continue;
                 }
 
@@ -235,7 +236,7 @@ XML,
                 $extractedXml = $reader->extractElementXml();
 
                 self::assertSame('item-1002', $reader->attributeValue('sku'));
-                self::assertTrue($reader->isStartElement(Xml::qname('entry', 'urn:feed')));
+                self::assertTrue($reader->isStartElement(XmlBuilder::qname('entry', 'urn:feed')));
 
                 $document = XmlReader::fromString($extractedXml);
                 $entry = $document->rootElement();
@@ -244,16 +245,19 @@ XML,
                 self::assertSame('urn:feed', $entry->namespaceUri());
                 self::assertSame(
                     'https://example.com/items/2',
-                    $entry->attributeValue(Xml::qname('href', 'urn:xlink', 'xlink')),
+                    $entry->attributeValue(XmlBuilder::qname('href', 'urn:xlink', 'xlink')),
                 );
                 self::assertSame(
                     'thumb-2.jpg',
                     $entry->findFirst('./media:thumbnail', ['media' => 'urn:media'])?->text(),
                 );
 
-                $importedXml = Xml::document(
-                    XmlImporter::element($entry)->attribute('exported', true),
-                )->withoutDeclaration()->toString(WriterConfig::compact(emitDeclaration: false));
+                $importedXml = XmlWriter::toString(
+                    XmlBuilder::document(
+                        XmlImporter::element($entry)->attribute('exported', true),
+                    )->withoutDeclaration(),
+                    WriterConfig::compact(emitDeclaration: false),
+                );
 
                 $validator = XmlValidator::fromString(
                     <<<'XSD'
@@ -277,7 +281,7 @@ XSD,
                 $validated = $validator->validateString($extractedXml)->isValid();
 
                 self::assertTrue($reader->read());
-                self::assertTrue($reader->isStartElement(Xml::qname('title', 'urn:feed')));
+                self::assertTrue($reader->isStartElement(XmlBuilder::qname('title', 'urn:feed')));
 
                 break;
             }
@@ -480,7 +484,7 @@ XML,
             $importedDocument = null;
 
             while ($reader->read()) {
-                if (!$reader->isStartElement(Xml::qname('entry', 'urn:feed'))) {
+                if (!$reader->isStartElement(XmlBuilder::qname('entry', 'urn:feed'))) {
                     continue;
                 }
 
@@ -496,18 +500,21 @@ XML,
                 self::assertSame('item-1002', $entry->attributeValue('sku'));
                 self::assertSame(
                     'https://example.com/items/2',
-                    $entry->attributeValue(Xml::qname('href', 'urn:xlink', 'xlink')),
+                    $entry->attributeValue(XmlBuilder::qname('href', 'urn:xlink', 'xlink')),
                 );
                 self::assertNotNull($thumbnail);
                 self::assertSame(
                     '640',
-                    $thumbnail->attributeValue(Xml::qname('width', 'urn:media', 'media')),
+                    $thumbnail->attributeValue(XmlBuilder::qname('width', 'urn:media', 'media')),
                 );
                 self::assertSame('thumb-2.jpg', $thumbnail->text());
 
-                $importedDocument = Xml::document(
-                    XmlImporter::element($entry)->attribute('exported', true),
-                )->withoutDeclaration()->toString(WriterConfig::compact(emitDeclaration: false));
+                $importedDocument = XmlWriter::toString(
+                    XmlBuilder::document(
+                        XmlImporter::element($entry)->attribute('exported', true),
+                    )->withoutDeclaration(),
+                    WriterConfig::compact(emitDeclaration: false),
+                );
 
                 break;
             }

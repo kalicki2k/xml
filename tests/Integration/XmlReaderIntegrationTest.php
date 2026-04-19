@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Kalle\Xml\Tests\Integration;
 
-use Kalle\Xml\Builder\Xml;
+use Kalle\Xml\Builder\XmlBuilder;
 use Kalle\Xml\Name\QualifiedName;
 use Kalle\Xml\Reader\XmlReader;
 use PHPUnit\Framework\TestCase;
@@ -85,9 +85,9 @@ XML,
         try {
             $document = XmlReader::fromFile($path);
             $root = $document->rootElement();
-            $entry = $root->firstChildElement(Xml::qname('entry', 'urn:feed', 'atom'));
+            $entry = $root->firstChildElement(XmlBuilder::qname('entry', 'urn:feed', 'atom'));
             $declarations = $root->namespacesInScope();
-            $entries = $root->childElements(Xml::qname('entry', 'urn:feed'));
+            $entries = $root->childElements(XmlBuilder::qname('entry', 'urn:feed'));
 
             self::assertSame('feed', $root->name());
             self::assertSame('urn:feed', $root->namespaceUri());
@@ -100,20 +100,20 @@ XML,
             self::assertSame('xlink', $declarations[2]->prefix());
             self::assertNotNull($entry);
             self::assertCount(1, $entry->attributes());
-            self::assertTrue($entry->hasAttribute(Xml::qname('href', 'urn:xlink', 'link')));
+            self::assertTrue($entry->hasAttribute(XmlBuilder::qname('href', 'urn:xlink', 'link')));
             self::assertSame(
                 'https://example.com/items/1',
-                $entry->attributeValue(Xml::qname('href', 'urn:xlink', 'link')),
+                $entry->attributeValue(XmlBuilder::qname('href', 'urn:xlink', 'link')),
             );
             self::assertNull($entry->attributeValue('missing'));
             self::assertFalse($entry->hasAttribute('missing'));
             self::assertSame(
                 'Blue mug',
-                $entry->firstChildElement(Xml::qname('title', 'urn:feed'))?->text(),
+                $entry->firstChildElement(XmlBuilder::qname('title', 'urn:feed'))?->text(),
             );
             self::assertSame(
                 'item-1001',
-                $entry->firstChildElement(Xml::qname('identifier', 'urn:dc', 'meta'))?->text(),
+                $entry->firstChildElement(XmlBuilder::qname('identifier', 'urn:dc', 'meta'))?->text(),
             );
         } finally {
             @unlink($path);
@@ -131,13 +131,13 @@ XML,
         );
 
         $root = $document->rootElement();
-        $entry = $root->firstChildElement(Xml::qname('entry', 'urn:feed'));
+        $entry = $root->firstChildElement(XmlBuilder::qname('entry', 'urn:feed'));
 
         self::assertNotNull($entry);
         self::assertSame('urn:feed', $entry->namespaceUri());
         self::assertSame('self', $entry->attributeValue('rel'));
-        self::assertNull($entry->attributeValue(Xml::qname('rel', 'urn:feed', 'feed')));
-        self::assertFalse($entry->hasAttribute(Xml::qname('rel', 'urn:feed', 'feed')));
+        self::assertNull($entry->attributeValue(XmlBuilder::qname('rel', 'urn:feed', 'feed')));
+        self::assertFalse($entry->hasAttribute(XmlBuilder::qname('rel', 'urn:feed', 'feed')));
     }
 
     public function testItTraversesPrefixedChildElementsAndNamespacedAttributesFromAStream(): void
@@ -170,28 +170,28 @@ XML,
             $document = XmlReader::fromStream($stream);
             $root = $document->rootElement();
             $supplier = $root
-                ->firstChildElement(Xml::qname('AccountingSupplierParty', 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2', 'cac'))
-                ?->firstChildElement(Xml::qname('Party', 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2', 'cac'));
+                ->firstChildElement(XmlBuilder::qname('AccountingSupplierParty', 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2', 'cac'))
+                ?->firstChildElement(XmlBuilder::qname('Party', 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2', 'cac'));
 
             self::assertSame('Invoice', $root->name());
             self::assertSame(
                 'de',
-                $root->attributeValue(Xml::qname('lang', QualifiedName::XML_NAMESPACE_URI, 'xml')),
+                $root->attributeValue(XmlBuilder::qname('lang', QualifiedName::XML_NAMESPACE_URI, 'xml')),
             );
             self::assertCount(1, $root->attributes());
             self::assertCount(3, $root->namespacesInScope());
             self::assertSame(
                 'RE-2026-0042',
-                $root->firstChildElement(Xml::qname('ID', 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2', 'cbc'))?->text(),
+                $root->firstChildElement(XmlBuilder::qname('ID', 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2', 'cbc'))?->text(),
             );
             self::assertNotNull($supplier);
             self::assertCount(
                 1,
-                $root->childElements(Xml::qname('AccountingSupplierParty', 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2')),
+                $root->childElements(XmlBuilder::qname('AccountingSupplierParty', 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2')),
             );
-            $endpoint = $supplier->firstChildElement(Xml::qname('EndpointID', 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2', 'cbc'));
-            $partyName = $supplier->firstChildElement(Xml::qname('PartyName', 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2', 'cac'));
-            $supplierName = $partyName?->firstChildElement(Xml::qname('Name', 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2', 'cbc'));
+            $endpoint = $supplier->firstChildElement(XmlBuilder::qname('EndpointID', 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2', 'cbc'));
+            $partyName = $supplier->firstChildElement(XmlBuilder::qname('PartyName', 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2', 'cac'));
+            $supplierName = $partyName?->firstChildElement(XmlBuilder::qname('Name', 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2', 'cbc'));
 
             self::assertNotNull($endpoint);
             self::assertSame('0409876543210', $endpoint->text());

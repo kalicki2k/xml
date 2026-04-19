@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 
-use Kalle\Xml\Builder\Xml;
+use Kalle\Xml\Builder\XmlBuilder;
 use Kalle\Xml\Validation\XmlValidator;
 
 $validator = XmlValidator::fromString(
@@ -29,13 +29,13 @@ $validator = XmlValidator::fromString(
 XSD,
 );
 
-$document = Xml::document(
-    Xml::element('catalog')
+$document = XmlBuilder::document(
+    XmlBuilder::element('catalog')
         ->child(
-            Xml::element('book')
+            XmlBuilder::element('book')
                 ->attribute('isbn', '9780132350884')
-                ->child(Xml::element('title')->text('Clean Code'))
-                ->child(Xml::element('price')->text('39.90')),
+                ->child(XmlBuilder::element('title')->text('Clean Code'))
+                ->child(XmlBuilder::element('price')->text('39.90')),
         ),
 );
 

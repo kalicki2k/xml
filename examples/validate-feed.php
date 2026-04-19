@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 
-use Kalle\Xml\Builder\Xml;
+use Kalle\Xml\Builder\XmlBuilder;
 use Kalle\Xml\Validation\XmlValidator;
 
 $validator = XmlValidator::fromString(
@@ -28,18 +28,18 @@ $validator = XmlValidator::fromString(
 XSD,
 );
 
-$document = Xml::document(
-    Xml::element(Xml::qname('feed', 'urn:feed'))
+$document = XmlBuilder::document(
+    XmlBuilder::element(XmlBuilder::qname('feed', 'urn:feed'))
         ->declareDefaultNamespace('urn:feed')
         ->child(
-            Xml::element(Xml::qname('entry', 'urn:feed'))
+            XmlBuilder::element(XmlBuilder::qname('entry', 'urn:feed'))
                 ->attribute('sku', 'item-1001')
-                ->child(Xml::element(Xml::qname('title', 'urn:feed'))->text('Blue mug')),
+                ->child(XmlBuilder::element(XmlBuilder::qname('title', 'urn:feed'))->text('Blue mug')),
         )
         ->child(
-            Xml::element(Xml::qname('entry', 'urn:feed'))
+            XmlBuilder::element(XmlBuilder::qname('entry', 'urn:feed'))
                 ->attribute('sku', 'item-1002')
-                ->child(Xml::element(Xml::qname('title', 'urn:feed'))->text('Notebook set')),
+                ->child(XmlBuilder::element(XmlBuilder::qname('title', 'urn:feed'))->text('Notebook set')),
         ),
 );
 

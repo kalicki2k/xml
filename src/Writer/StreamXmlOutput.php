@@ -24,6 +24,9 @@ use function stream_get_meta_data;
 use function strlen;
 use function substr;
 
+/**
+ * @internal
+ */
 final class StreamXmlOutput implements XmlOutput
 {
     private bool $finished = false;
@@ -78,14 +81,14 @@ final class StreamXmlOutput implements XmlOutput
     {
         if (!is_resource($stream) || get_resource_type($stream) !== 'stream') {
             throw new StreamWriteException(sprintf(
-                'Streaming XML output requires a writable stream resource; %s given.',
+                'XML output requires a writable stream resource; %s given.',
                 get_debug_type($stream),
             ));
         }
 
         if (!self::isWritableStream($stream)) {
             throw new StreamWriteException(sprintf(
-                'Streaming XML output requires a writable stream resource; %s is not writable.',
+                'XML output requires a writable stream resource; %s is not writable.',
                 self::describeStream($stream),
             ));
         }

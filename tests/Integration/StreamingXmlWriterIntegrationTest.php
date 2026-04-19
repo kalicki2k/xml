@@ -4,15 +4,17 @@ declare(strict_types=1);
 
 namespace Kalle\Xml\Tests\Integration;
 
-use Kalle\Xml\Builder\Xml;
+use Kalle\Xml\Builder\XmlBuilder;
 use Kalle\Xml\Exception\SerializationException;
 use Kalle\Xml\Writer\StreamingXmlWriter;
 use Kalle\Xml\Writer\WriterConfig;
+use Kalle\Xml\Writer\XmlWriter;
 use PHPUnit\Framework\TestCase;
 
 use function fclose;
 use function file_get_contents;
 use function fopen;
+use function is_resource;
 use function rewind;
 use function stream_get_contents;
 use function sys_get_temp_dir;
@@ -23,81 +25,84 @@ final class StreamingXmlWriterIntegrationTest extends TestCase
 {
     public function testCompactStreamingWriterMatchesDocumentSerialization(): void
     {
-        $document = Xml::document(
-            Xml::element('catalog')
+        $document = XmlBuilder::document(
+            XmlBuilder::element('catalog')
                 ->attribute('generatedAt', '2026-04-17T10:30:00Z')
                 ->child(
-                    Xml::element('book')
+                    XmlBuilder::element('book')
                         ->attribute('isbn', '9780132350884')
                         ->text('Clean Code'),
                 ),
         );
 
-        $writer = StreamingXmlWriter::forString(WriterConfig::compact());
+        $actual = $this->streamToString(WriterConfig::compact(), static function (StreamingXmlWriter $writer): void {
+            $writer
+                ->startDocument()
+                ->startElement('catalog')
+                ->writeAttribute('generatedAt', '2026-04-17T10:30:00Z')
+                ->startElement('book')
+                ->writeAttribute('isbn', '9780132350884')
+                ->writeText('Clean Code')
+                ->endElement()
+                ->endElement();
+        });
 
-        $writer
-            ->startDocument()
-            ->startElement('catalog')
-            ->writeAttribute('generatedAt', '2026-04-17T10:30:00Z')
-            ->startElement('book')
-            ->writeAttribute('isbn', '9780132350884')
-            ->writeText('Clean Code')
-            ->endElement()
-            ->endElement()
-            ->finish();
-
-        self::assertSame($document->toString(WriterConfig::compact()), $writer->toString());
+        self::assertSame(XmlWriter::toString($document, WriterConfig::compact()), $actual);
     }
 
     public function testNamespacedStreamingWriterMatchesDocumentOutput(): void
     {
-        $document = Xml::document(
-            Xml::element(Xml::qname('feed', 'urn:feed', 'atom'))
+        $document = XmlBuilder::document(
+            XmlBuilder::element(XmlBuilder::qname('feed', 'urn:feed', 'atom'))
                 ->declareNamespace('xlink', 'urn:xlink')
                 ->child(
-                    Xml::element(Xml::qname('entry', 'urn:feed', 'atom'))
+                    XmlBuilder::element(XmlBuilder::qname('entry', 'urn:feed', 'atom'))
                         ->attribute(
-                            Xml::qname('href', 'urn:xlink', 'xlink'),
+                            XmlBuilder::qname('href', 'urn:xlink', 'xlink'),
                             'https://example.com/items/1',
                         ),
                 ),
         )->withoutDeclaration();
 
-        $writer = StreamingXmlWriter::forString(WriterConfig::compact(emitDeclaration: false));
-
-        $writer
-            ->startElement(Xml::qname('feed', 'urn:feed', 'atom'))
-            ->declareNamespace('xlink', 'urn:xlink')
-            ->startElement(Xml::qname('entry', 'urn:feed', 'atom'))
-            ->writeAttribute(
-                Xml::qname('href', 'urn:xlink', 'xlink'),
-                'https://example.com/items/1',
-            )
-            ->endElement()
-            ->endElement()
-            ->finish();
+        $actual = $this->streamToString(
+            WriterConfig::compact(emitDeclaration: false),
+            static function (StreamingXmlWriter $writer): void {
+                $writer
+                    ->startElement(XmlBuilder::qname('feed', 'urn:feed', 'atom'))
+                    ->declareNamespace('xlink', 'urn:xlink')
+                    ->startElement(XmlBuilder::qname('entry', 'urn:feed', 'atom'))
+                    ->writeAttribute(
+                        XmlBuilder::qname('href', 'urn:xlink', 'xlink'),
+                        'https://example.com/items/1',
+                    )
+                    ->endElement()
+                    ->endElement();
+            },
+        );
 
         self::assertSame(
-            $document->toString(WriterConfig::compact(emitDeclaration: false)),
-            $writer->toString(),
+            XmlWriter::toString($document, WriterConfig::compact(emitDeclaration: false)),
+            $actual,
         );
     }
 
     public function testStreamingWriterSupportsDefaultNamespacesIncrementally(): void
     {
-        $writer = StreamingXmlWriter::forString(WriterConfig::compact(emitDeclaration: false));
-
-        $writer
-            ->startElement(Xml::qname('catalog', 'urn:catalog'))
-            ->startElement(Xml::qname('book', 'urn:catalog'))
-            ->writeText('DDD')
-            ->endElement()
-            ->endElement()
-            ->finish();
+        $actual = $this->streamToString(
+            WriterConfig::compact(emitDeclaration: false),
+            static function (StreamingXmlWriter $writer): void {
+                $writer
+                    ->startElement(XmlBuilder::qname('catalog', 'urn:catalog'))
+                    ->startElement(XmlBuilder::qname('book', 'urn:catalog'))
+                    ->writeText('DDD')
+                    ->endElement()
+                    ->endElement();
+            },
+        );
 
         self::assertSame(
             '<catalog xmlns="urn:catalog"><book>DDD</book></catalog>',
-            $writer->toString(),
+            $actual,
         );
     }
 
@@ -114,11 +119,11 @@ final class StreamingXmlWriterIntegrationTest extends TestCase
             );
 
             $writer
-                ->startElement(Xml::qname('feed', 'urn:feed', 'atom'))
+                ->startElement(XmlBuilder::qname('feed', 'urn:feed', 'atom'))
                 ->declareNamespace('xlink', 'urn:xlink')
-                ->startElement(Xml::qname('entry', 'urn:feed', 'atom'))
+                ->startElement(XmlBuilder::qname('entry', 'urn:feed', 'atom'))
                 ->writeAttribute(
-                    Xml::qname('href', 'urn:xlink', 'xlink'),
+                    XmlBuilder::qname('href', 'urn:xlink', 'xlink'),
                     'https://example.com/items/1',
                 )
                 ->endElement()
@@ -136,69 +141,73 @@ final class StreamingXmlWriterIntegrationTest extends TestCase
 
     public function testPrettyPrintedStreamingWriterMatchesDocumentOutputForStructuralContent(): void
     {
-        $document = Xml::document(
-            Xml::element('catalog')
+        $document = XmlBuilder::document(
+            XmlBuilder::element('catalog')
                 ->comment('generated file')
                 ->processingInstruction('cache-control', 'ttl="300"')
-                ->child(Xml::element('book'))
-                ->child(Xml::element('magazine')),
+                ->child(XmlBuilder::element('book'))
+                ->child(XmlBuilder::element('magazine')),
         )->withoutDeclaration();
 
-        $writer = StreamingXmlWriter::forString(WriterConfig::pretty(emitDeclaration: false));
-
-        $writer
-            ->startElement('catalog')
-            ->writeComment('generated file')
-            ->writeProcessingInstruction('cache-control', 'ttl="300"')
-            ->startElement('book')
-            ->endElement()
-            ->startElement('magazine')
-            ->endElement()
-            ->endElement()
-            ->finish();
+        $actual = $this->streamToString(
+            WriterConfig::pretty(emitDeclaration: false),
+            static function (StreamingXmlWriter $writer): void {
+                $writer
+                    ->startElement('catalog')
+                    ->writeComment('generated file')
+                    ->writeProcessingInstruction('cache-control', 'ttl="300"')
+                    ->startElement('book')
+                    ->endElement()
+                    ->startElement('magazine')
+                    ->endElement()
+                    ->endElement();
+            },
+        );
 
         self::assertSame(
-            $document->toString(WriterConfig::pretty(emitDeclaration: false)),
-            $writer->toString(),
+            XmlWriter::toString($document, WriterConfig::pretty(emitDeclaration: false)),
+            $actual,
         );
     }
 
     public function testItCanWritePrebuiltElementSubtreesWhileStreaming(): void
     {
-        $document = Xml::document(
-            Xml::element('catalog')
+        $document = XmlBuilder::document(
+            XmlBuilder::element('catalog')
                 ->child(
-                    Xml::element('book')
+                    XmlBuilder::element('book')
                         ->attribute('isbn', '9780132350884')
-                        ->child(Xml::element('title')->text('Clean Code')),
+                        ->child(XmlBuilder::element('title')->text('Clean Code')),
                 )
                 ->child(
-                    Xml::element('book')
+                    XmlBuilder::element('book')
                         ->attribute('isbn', '9780321125217')
-                        ->child(Xml::element('title')->text('Domain-Driven Design')),
+                        ->child(XmlBuilder::element('title')->text('Domain-Driven Design')),
                 ),
         )->withoutDeclaration();
 
-        $writer = StreamingXmlWriter::forString(WriterConfig::compact(emitDeclaration: false));
-
-        $writer
-            ->startElement('catalog')
-            ->writeElement(
-                Xml::element('book')
-                    ->attribute('isbn', '9780132350884')
-                    ->child(Xml::element('title')->text('Clean Code')),
-            )
-            ->writeElement(
-                Xml::element('book')
-                    ->attribute('isbn', '9780321125217')
-                    ->child(Xml::element('title')->text('Domain-Driven Design')),
-            )
-            ->endElement()
-            ->finish();
+        $actual = $this->streamToString(
+            WriterConfig::compact(emitDeclaration: false),
+            static function (StreamingXmlWriter $writer): void {
+                $writer
+                    ->startElement('catalog')
+                    ->writeElement(
+                        XmlBuilder::element('book')
+                            ->attribute('isbn', '9780132350884')
+                            ->child(XmlBuilder::element('title')->text('Clean Code')),
+                    )
+                    ->writeElement(
+                        XmlBuilder::element('book')
+                            ->attribute('isbn', '9780321125217')
+                            ->child(XmlBuilder::element('title')->text('Domain-Driven Design')),
+                    )
+                    ->endElement();
+            },
+        );
 
         self::assertSame(
-            $document->toString(WriterConfig::compact(emitDeclaration: false)),
-            $writer->toString(),
+            XmlWriter::toString($document, WriterConfig::compact(emitDeclaration: false)),
+            $actual,
         );
     }
 
@@ -231,22 +240,6 @@ final class StreamingXmlWriterIntegrationTest extends TestCase
 
     public function testPrettyPrintedStreamingRejectsLateMixedContentTransitions(): void
     {
-        $writer = StreamingXmlWriter::forString(WriterConfig::pretty(emitDeclaration: false));
-
-        $writer
-            ->startElement('p')
-            ->startElement('strong')
-            ->writeText('Hello')
-            ->endElement();
-
-        $this->expectException(SerializationException::class);
-        $this->expectExceptionMessage('text-like content');
-
-        $writer->writeText(' world');
-    }
-
-    public function testItRejectsReturningAStringFromANonStringTarget(): void
-    {
         $stream = fopen('php://temp', 'wb+');
 
         self::assertIsResource($stream);
@@ -254,20 +247,45 @@ final class StreamingXmlWriterIntegrationTest extends TestCase
         try {
             $writer = StreamingXmlWriter::forStream(
                 $stream,
-                WriterConfig::compact(emitDeclaration: false),
+                WriterConfig::pretty(emitDeclaration: false),
             );
 
             $writer
-                ->startElement('catalog')
-                ->endElement()
-                ->finish();
+                ->startElement('p')
+                ->startElement('strong')
+                ->writeText('Hello')
+                ->endElement();
 
             $this->expectException(SerializationException::class);
-            $this->expectExceptionMessage('StreamingXmlWriter::forString()');
+            $this->expectExceptionMessage('text-like content');
 
-            $writer->toString();
+            $writer->writeText(' world');
         } finally {
             fclose($stream);
+        }
+    }
+
+    /**
+     * @param callable(StreamingXmlWriter): void $write
+     */
+    private function streamToString(WriterConfig $config, callable $write): string
+    {
+        $stream = fopen('php://temp', 'wb+');
+
+        self::assertIsResource($stream);
+
+        try {
+            $writer = StreamingXmlWriter::forStream($stream, $config);
+            $write($writer);
+            $writer->finish();
+
+            rewind($stream);
+
+            return (string) stream_get_contents($stream);
+        } finally {
+            if (is_resource($stream)) {
+                fclose($stream);
+            }
         }
     }
 }

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Kalle\Xml\Tests\Unit;
 
 use Kalle\Xml\Attribute\Attribute;
-use Kalle\Xml\Builder\Xml;
+use Kalle\Xml\Builder\XmlBuilder;
 use Kalle\Xml\Document\XmlDeclaration;
 use Kalle\Xml\Escape\XmlEscaper;
 use Kalle\Xml\Exception\DuplicateAttributeException;
@@ -17,9 +17,9 @@ use Kalle\Xml\Exception\InvalidXmlContent;
 use Kalle\Xml\Exception\InvalidXmlDeclarationException;
 use Kalle\Xml\Exception\InvalidXmlName;
 use Kalle\Xml\Name\QualifiedName;
+use Kalle\Xml\Name\XmlNameValidator;
 use Kalle\Xml\Namespace\NamespaceDeclaration;
 use Kalle\Xml\Node\Element;
-use Kalle\Xml\Validate\XmlNameValidator;
 use Kalle\Xml\Writer\WriterConfig;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
@@ -29,25 +29,25 @@ final class ValidationTest extends TestCase
     public function testItRejectsRawPrefixedElementNamesInFavorOfQualifiedNames(): void
     {
         $this->expectException(InvalidXmlName::class);
-        $this->expectExceptionMessage('Xml::qname()');
+        $this->expectExceptionMessage('XmlBuilder::qname()');
 
-        Xml::element('ns:book');
+        XmlBuilder::element('ns:book');
     }
 
     public function testItRejectsRawPrefixedAttributeNamesEvenWhenRemovingAttributes(): void
     {
         $this->expectException(InvalidXmlName::class);
-        $this->expectExceptionMessage('Xml::qname()');
+        $this->expectExceptionMessage('XmlBuilder::qname()');
 
-        Xml::element('book')->attribute('xml:lang', null);
+        XmlBuilder::element('book')->attribute('xml:lang', null);
     }
 
     public function testItRejectsRawPrefixedAttributeNamesWhenAddingAttributes(): void
     {
         $this->expectException(InvalidXmlName::class);
-        $this->expectExceptionMessage('Xml::qname()');
+        $this->expectExceptionMessage('XmlBuilder::qname()');
 
-        Xml::element('book')->attribute('xml:lang', 'de');
+        XmlBuilder::element('book')->attribute('xml:lang', 'de');
     }
 
     public function testItRejectsNamespacedAttributesWithoutAnExplicitPrefix(): void
@@ -55,15 +55,15 @@ final class ValidationTest extends TestCase
         $this->expectException(InvalidXmlName::class);
         $this->expectExceptionMessage('Default namespaces do not apply to attributes');
 
-        Xml::element('book')->attribute(Xml::qname('href', 'urn:link'), 'https://example.com');
+        XmlBuilder::element('book')->attribute(XmlBuilder::qname('href', 'urn:link'), 'https://example.com');
     }
 
     public function testItAllowsAstralPlaneCharactersInXmlNames(): void
     {
         $elementName = "𐐀catalog";
-        $attributeName = Xml::qname("𐐀href", 'urn:link', 'link');
+        $attributeName = XmlBuilder::qname("𐐀href", 'urn:link', 'link');
 
-        $element = Xml::element($elementName)->attribute($attributeName, 'https://example.com');
+        $element = XmlBuilder::element($elementName)->attribute($attributeName, 'https://example.com');
 
         self::assertSame($elementName, $element->name());
         self::assertSame('link:𐐀href', $element->attributes()[0]->name());
@@ -74,7 +74,7 @@ final class ValidationTest extends TestCase
         $this->expectException(DuplicateNamespaceDeclarationException::class);
         $this->expectExceptionMessage('already declares the default namespace');
 
-        Xml::element(Xml::qname('catalog', 'urn:catalog'))
+        XmlBuilder::element(XmlBuilder::qname('catalog', 'urn:catalog'))
             ->declareDefaultNamespace('urn:catalog')
             ->declareDefaultNamespace('urn:other');
     }
@@ -84,7 +84,7 @@ final class ValidationTest extends TestCase
         $this->expectException(InvalidNamespaceDeclarationException::class);
         $this->expectExceptionMessage('Unqualified element');
 
-        Xml::element('catalog')->declareDefaultNamespace('urn:catalog');
+        XmlBuilder::element('catalog')->declareDefaultNamespace('urn:catalog');
     }
 
     public function testItRejectsEmptyNamespacePrefixesInTheFluentApi(): void
@@ -92,7 +92,7 @@ final class ValidationTest extends TestCase
         $this->expectException(InvalidNamespaceDeclarationException::class);
         $this->expectExceptionMessage('declareDefaultNamespace()');
 
-        Xml::element('catalog')->declareNamespace('', 'urn:catalog');
+        XmlBuilder::element('catalog')->declareNamespace('', 'urn:catalog');
     }
 
     public function testItRejectsEmptyNamespacePrefixesInNamespaceDeclarations(): void
@@ -113,7 +113,7 @@ final class ValidationTest extends TestCase
 
     public function testItAllowsDeclaringTheReservedXmlPrefixWithItsFixedNamespaceUri(): void
     {
-        $element = Xml::element('root')->declareNamespace('xml', QualifiedName::XML_NAMESPACE_URI);
+        $element = XmlBuilder::element('root')->declareNamespace('xml', QualifiedName::XML_NAMESPACE_URI);
 
         self::assertCount(1, $element->namespaceDeclarations());
         self::assertSame('xml', $element->namespaceDeclarations()[0]->prefix());
@@ -125,7 +125,7 @@ final class ValidationTest extends TestCase
         $this->expectException(InvalidNamespaceDeclarationException::class);
         $this->expectExceptionMessage('can only be bound to prefix "xml"');
 
-        Xml::element('root')->declareNamespace('lang', QualifiedName::XML_NAMESPACE_URI);
+        XmlBuilder::element('root')->declareNamespace('lang', QualifiedName::XML_NAMESPACE_URI);
     }
 
     public function testItExplainsWhichContextsReuseTheSamePrefixForDifferentUris(): void
@@ -134,8 +134,8 @@ final class ValidationTest extends TestCase
         $this->expectExceptionMessage('element "a:entry"');
         $this->expectExceptionMessage('attribute "a:href"');
 
-        Xml::element(Xml::qname('entry', 'urn:feed', 'a'))
-            ->attribute(Xml::qname('href', 'urn:link', 'a'), 'https://example.com/items/1');
+        XmlBuilder::element(XmlBuilder::qname('entry', 'urn:feed', 'a'))
+            ->attribute(XmlBuilder::qname('href', 'urn:link', 'a'), 'https://example.com/items/1');
     }
 
     public function testItRejectsInvalidXmlCharactersInTextNodes(): void
@@ -143,7 +143,7 @@ final class ValidationTest extends TestCase
         $this->expectException(InvalidXmlCharacter::class);
         $this->expectExceptionMessage('Text node content contains invalid XML character U+0001');
 
-        Xml::text("bad\u{0001}value");
+        XmlBuilder::text("bad\u{0001}value");
     }
 
     public function testItRejectsInvalidCommentContent(): void
@@ -151,7 +151,7 @@ final class ValidationTest extends TestCase
         $this->expectException(InvalidXmlContent::class);
         $this->expectExceptionMessage('cannot contain "--"');
 
-        Xml::comment('bad -- comment');
+        XmlBuilder::comment('bad -- comment');
     }
 
     public function testItRejectsCommentContentEndingWithAHyphen(): void
@@ -159,7 +159,7 @@ final class ValidationTest extends TestCase
         $this->expectException(InvalidXmlContent::class);
         $this->expectExceptionMessage('cannot end with "-"');
 
-        Xml::comment('bad-');
+        XmlBuilder::comment('bad-');
     }
 
     public function testItRejectsInvalidProcessingInstructionData(): void
@@ -167,7 +167,7 @@ final class ValidationTest extends TestCase
         $this->expectException(InvalidXmlContent::class);
         $this->expectExceptionMessage('Processing instruction data for "xml-stylesheet" cannot contain "?>"');
 
-        Xml::processingInstruction('xml-stylesheet', 'href="catalog.xsl"?>');
+        XmlBuilder::processingInstruction('xml-stylesheet', 'href="catalog.xsl"?>');
     }
 
     public function testItRejectsReservedProcessingInstructionTargets(): void
@@ -175,7 +175,7 @@ final class ValidationTest extends TestCase
         $this->expectException(InvalidXmlName::class);
         $this->expectExceptionMessage('reserved');
 
-        Xml::processingInstruction('xml');
+        XmlBuilder::processingInstruction('xml');
     }
 
     public function testItRejectsProcessingInstructionTargetsContainingColons(): void
@@ -183,7 +183,7 @@ final class ValidationTest extends TestCase
         $this->expectException(InvalidXmlName::class);
         $this->expectExceptionMessage('cannot contain ":"');
 
-        Xml::processingInstruction('xml:stylesheet');
+        XmlBuilder::processingInstruction('xml:stylesheet');
     }
 
     public function testItRejectsDuplicateAttributesInElementConstruction(): void
@@ -215,7 +215,7 @@ final class ValidationTest extends TestCase
 
     public function testStaticUtilityClassesAreNotInstantiable(): void
     {
-        self::assertFalse((new ReflectionClass(Xml::class))->isInstantiable());
+        self::assertFalse((new ReflectionClass(XmlBuilder::class))->isInstantiable());
         self::assertFalse((new ReflectionClass(XmlNameValidator::class))->isInstantiable());
         self::assertFalse((new ReflectionClass(XmlEscaper::class))->isInstantiable());
     }

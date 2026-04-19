@@ -6,7 +6,7 @@ namespace Kalle\Xml\Node;
 
 use Kalle\Xml\Escape\XmlEscaper;
 use Kalle\Xml\Exception\InvalidXmlContent;
-use Kalle\Xml\Validate\XmlNameValidator;
+use Kalle\Xml\Name\XmlNameValidator;
 
 use function str_contains;
 

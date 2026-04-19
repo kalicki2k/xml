@@ -12,6 +12,9 @@ use Kalle\Xml\Namespace\NamespaceScope;
 
 use function sprintf;
 
+/**
+ * @internal
+ */
 final class OpenElementFrame
 {
     public const CONTENT_EMPTY = 'empty';

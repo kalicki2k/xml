@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 
-use Kalle\Xml\Builder\Xml;
+use Kalle\Xml\Builder\XmlBuilder;
 use Kalle\Xml\Import\XmlImporter;
 use Kalle\Xml\Reader\StreamingXmlReader;
+use Kalle\Xml\Writer\XmlWriter;
 
 $stream = fopen('php://temp', 'wb+');
 
@@ -37,7 +38,7 @@ try {
     $reader = StreamingXmlReader::fromStream($stream);
 
     while ($reader->read()) {
-        if (!$reader->isStartElement(Xml::qname(
+        if (!$reader->isStartElement(XmlBuilder::qname(
             'AccountingSupplierParty',
             'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2',
             'cac',
@@ -47,9 +48,11 @@ try {
 
         $supplierParty = $reader->expandElement();
 
-        echo Xml::document(
-            XmlImporter::element($supplierParty),
-        )->withoutDeclaration()->toString() . "\n";
+        echo XmlWriter::toString(
+            XmlBuilder::document(
+                XmlImporter::element($supplierParty),
+            )->withoutDeclaration(),
+        ) . "\n";
 
         break;
     }

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Kalle\Xml\Tests\Integration;
 
-use Kalle\Xml\Builder\Xml;
+use Kalle\Xml\Builder\XmlBuilder;
 use Kalle\Xml\Document\XmlDocument;
 use Kalle\Xml\Validation\XmlValidator;
 use PHPUnit\Framework\TestCase;
@@ -153,12 +153,12 @@ XML,
 XSD,
         );
 
-        $document = Xml::document(
-            Xml::element(Xml::qname('feed', 'urn:feed'))
+        $document = XmlBuilder::document(
+            XmlBuilder::element(XmlBuilder::qname('feed', 'urn:feed'))
                 ->declareDefaultNamespace('urn:feed')
                 ->child(
-                    Xml::element(Xml::qname('entry', 'urn:feed'))
-                        ->child(Xml::element(Xml::qname('title', 'urn:feed'))->text('Blue mug')),
+                    XmlBuilder::element(XmlBuilder::qname('entry', 'urn:feed'))
+                        ->child(XmlBuilder::element(XmlBuilder::qname('title', 'urn:feed'))->text('Blue mug')),
                 ),
         );
 
@@ -316,16 +316,16 @@ XSD;
 
     private function catalogDocument(bool $includePrice = true): XmlDocument
     {
-        $book = Xml::element('book')
+        $book = XmlBuilder::element('book')
             ->attribute('isbn', '9780132350884')
-            ->child(Xml::element('title')->text('Clean Code'));
+            ->child(XmlBuilder::element('title')->text('Clean Code'));
 
         if ($includePrice) {
-            $book = $book->child(Xml::element('price')->text('39.90'));
+            $book = $book->child(XmlBuilder::element('price')->text('39.90'));
         }
 
-        return Xml::document(
-            Xml::element('catalog')
+        return XmlBuilder::document(
+            XmlBuilder::element('catalog')
                 ->child($book),
         );
     }

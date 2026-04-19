@@ -7,7 +7,7 @@ namespace Kalle\Xml\Namespace;
 use Kalle\Xml\Escape\XmlEscaper;
 use Kalle\Xml\Exception\InvalidNamespaceDeclarationException;
 use Kalle\Xml\Name\QualifiedName;
-use Kalle\Xml\Validate\XmlNameValidator;
+use Kalle\Xml\Name\XmlNameValidator;
 
 final readonly class NamespaceDeclaration
 {

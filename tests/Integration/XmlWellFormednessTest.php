@@ -6,8 +6,9 @@ namespace Kalle\Xml\Tests\Integration;
 
 use DOMDocument;
 use DOMElement;
-use Kalle\Xml\Builder\Xml;
+use Kalle\Xml\Builder\XmlBuilder;
 use Kalle\Xml\Writer\WriterConfig;
+use Kalle\Xml\Writer\XmlWriter;
 use LibXMLError;
 use PHPUnit\Framework\TestCase;
 
@@ -28,16 +29,19 @@ final class XmlWellFormednessTest extends TestCase
 
     public function testPrettyPrintedNamespacedOutputIsAcceptedByDomDocument(): void
     {
-        $xml = Xml::document(
-            Xml::element(Xml::qname('feed', 'urn:feed', 'atom'))
-                ->declareNamespace('atom', 'urn:feed')
-                ->declareNamespace('xlink', 'urn:xlink')
-                ->child(
-                    Xml::element(Xml::qname('entry', 'urn:feed', 'atom'))
-                        ->attribute(Xml::qname('href', 'urn:xlink', 'xlink'), 'https://example.com/items/1')
-                        ->child(Xml::element(Xml::qname('title', 'urn:feed'))->text('Example entry')),
-                ),
-        )->withoutDeclaration()->toString(WriterConfig::pretty(emitDeclaration: false));
+        $xml = XmlWriter::toString(
+            XmlBuilder::document(
+                XmlBuilder::element(XmlBuilder::qname('feed', 'urn:feed', 'atom'))
+                    ->declareNamespace('atom', 'urn:feed')
+                    ->declareNamespace('xlink', 'urn:xlink')
+                    ->child(
+                        XmlBuilder::element(XmlBuilder::qname('entry', 'urn:feed', 'atom'))
+                            ->attribute(XmlBuilder::qname('href', 'urn:xlink', 'xlink'), 'https://example.com/items/1')
+                            ->child(XmlBuilder::element(XmlBuilder::qname('title', 'urn:feed'))->text('Example entry')),
+                    ),
+            )->withoutDeclaration(),
+            WriterConfig::pretty(emitDeclaration: false),
+        );
 
         $dom = $this->loadXml($xml);
         $root = $dom->documentElement;
@@ -57,33 +61,36 @@ final class XmlWellFormednessTest extends TestCase
 
     public function testRealisticInvoiceOutputIsAcceptedByDomDocument(): void
     {
-        $xml = Xml::document(
-            Xml::element(Xml::qname('Invoice', self::UBL_INVOICE_NS))
-                ->declareNamespace('cac', self::UBL_CAC_NS)
-                ->declareNamespace('cbc', self::UBL_CBC_NS)
-                ->declareNamespace('xsi', self::XSI_NS)
-                ->attribute(
-                    Xml::qname('schemaLocation', self::XSI_NS, 'xsi'),
-                    self::UBL_INVOICE_NS . ' UBL-Invoice-2.1.xsd',
-                )
-                ->child(Xml::element(Xml::qname('CustomizationID', self::UBL_CBC_NS, 'cbc'))->text('urn:cen.eu:en16931:2017'))
-                ->child(Xml::element(Xml::qname('ID', self::UBL_CBC_NS, 'cbc'))->text('RE-2026-0042'))
-                ->child(
-                    Xml::element(Xml::qname('AccountingSupplierParty', self::UBL_CAC_NS, 'cac'))
-                        ->child(
-                            Xml::element(Xml::qname('Party', self::UBL_CAC_NS, 'cac'))
-                                ->child(
-                                    Xml::element(Xml::qname('EndpointID', self::UBL_CBC_NS, 'cbc'))
-                                        ->attribute('schemeID', '0088')
-                                        ->text('0409876543210'),
-                                )
-                                ->child(
-                                    Xml::element(Xml::qname('PartyName', self::UBL_CAC_NS, 'cac'))
-                                        ->child(Xml::element(Xml::qname('Name', self::UBL_CBC_NS, 'cbc'))->text('Muster Software GmbH')),
-                                ),
-                        ),
-                ),
-        )->toString(WriterConfig::pretty());
+        $xml = XmlWriter::toString(
+            XmlBuilder::document(
+                XmlBuilder::element(XmlBuilder::qname('Invoice', self::UBL_INVOICE_NS))
+                    ->declareNamespace('cac', self::UBL_CAC_NS)
+                    ->declareNamespace('cbc', self::UBL_CBC_NS)
+                    ->declareNamespace('xsi', self::XSI_NS)
+                    ->attribute(
+                        XmlBuilder::qname('schemaLocation', self::XSI_NS, 'xsi'),
+                        self::UBL_INVOICE_NS . ' UBL-Invoice-2.1.xsd',
+                    )
+                    ->child(XmlBuilder::element(XmlBuilder::qname('CustomizationID', self::UBL_CBC_NS, 'cbc'))->text('urn:cen.eu:en16931:2017'))
+                    ->child(XmlBuilder::element(XmlBuilder::qname('ID', self::UBL_CBC_NS, 'cbc'))->text('RE-2026-0042'))
+                    ->child(
+                        XmlBuilder::element(XmlBuilder::qname('AccountingSupplierParty', self::UBL_CAC_NS, 'cac'))
+                            ->child(
+                                XmlBuilder::element(XmlBuilder::qname('Party', self::UBL_CAC_NS, 'cac'))
+                                    ->child(
+                                        XmlBuilder::element(XmlBuilder::qname('EndpointID', self::UBL_CBC_NS, 'cbc'))
+                                            ->attribute('schemeID', '0088')
+                                            ->text('0409876543210'),
+                                    )
+                                    ->child(
+                                        XmlBuilder::element(XmlBuilder::qname('PartyName', self::UBL_CAC_NS, 'cac'))
+                                            ->child(XmlBuilder::element(XmlBuilder::qname('Name', self::UBL_CBC_NS, 'cbc'))->text('Muster Software GmbH')),
+                                    ),
+                            ),
+                    ),
+            ),
+            WriterConfig::pretty(),
+        );
 
         $dom = $this->loadXml($xml);
         $root = $dom->documentElement;

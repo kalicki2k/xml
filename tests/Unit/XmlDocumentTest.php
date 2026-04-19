@@ -4,30 +4,26 @@ declare(strict_types=1);
 
 namespace Kalle\Xml\Tests\Unit;
 
-use Kalle\Xml\Builder\Xml;
+use Kalle\Xml\Builder\XmlBuilder;
 use Kalle\Xml\Document\XmlDeclaration;
 use Kalle\Xml\Document\XmlDocument;
-use Kalle\Xml\Writer\WriterConfig;
 use PHPUnit\Framework\TestCase;
+use ReflectionMethod;
 
 final class XmlDocumentTest extends TestCase
 {
     public function testItCreatesASimpleDocumentFromTheBuilder(): void
     {
-        $document = Xml::document(Xml::element('catalog'));
+        $document = XmlBuilder::document(XmlBuilder::element('catalog'));
 
         self::assertInstanceOf(XmlDocument::class, $document);
         self::assertSame('catalog', $document->root()->name());
         self::assertInstanceOf(XmlDeclaration::class, $document->declaration());
-        self::assertSame(
-            '<?xml version="1.0" encoding="UTF-8"?><catalog/>',
-            $document->toString(),
-        );
     }
 
     public function testWithDeclarationReturnsANewDocumentInstance(): void
     {
-        $document = Xml::document(Xml::element('catalog'));
+        $document = XmlBuilder::document(XmlBuilder::element('catalog'));
         $updated = $document->withDeclaration(new XmlDeclaration(standalone: true));
 
         self::assertNotSame($document, $updated);
@@ -37,10 +33,10 @@ final class XmlDocumentTest extends TestCase
 
     public function testWithRootReturnsANewDocumentWithTheSameDeclaration(): void
     {
-        $document = Xml::document(Xml::element('catalog'))
+        $document = XmlBuilder::document(XmlBuilder::element('catalog'))
             ->withDeclaration(new XmlDeclaration(standalone: true));
 
-        $updated = $document->withRoot(Xml::element('library'));
+        $updated = $document->withRoot(XmlBuilder::element('library'));
 
         self::assertNotSame($document, $updated);
         self::assertSame('catalog', $document->root()->name());
@@ -51,7 +47,7 @@ final class XmlDocumentTest extends TestCase
     public function testNoOpDocumentFluentMethodsReturnTheSameInstance(): void
     {
         $declaration = new XmlDeclaration();
-        $root = Xml::element('catalog');
+        $root = XmlBuilder::element('catalog');
         $document = new XmlDocument($root, $declaration);
         $documentWithoutDeclaration = new XmlDocument($root);
 
@@ -69,51 +65,30 @@ final class XmlDocumentTest extends TestCase
         self::assertSame($declaration, $declaration->withStandalone(true));
     }
 
-    public function testPrettyPrintingUsesTheWriterConfig(): void
-    {
-        $document = Xml::document(
-            Xml::element('catalog')
-                ->child(Xml::element('book'))
-                ->child(Xml::element('magazine')),
-        );
-
-        $xml = $document->toString(WriterConfig::pretty(emitDeclaration: false));
-
-        self::assertSame(
-            "<catalog>\n    <book/>\n    <magazine/>\n</catalog>",
-            $xml,
-        );
-    }
-
     public function testWithoutDeclarationRemovesTheDocumentDeclaration(): void
     {
-        $document = Xml::document(Xml::element('catalog'))->withoutDeclaration();
+        $document = XmlBuilder::document(XmlBuilder::element('catalog'))->withoutDeclaration();
 
         self::assertNull($document->declaration());
-        self::assertSame('<catalog/>', $document->toString());
     }
 
     public function testBuilderCanCreateDeclarationsConveniently(): void
     {
-        $document = Xml::document(Xml::element('catalog'))
-            ->withDeclaration(Xml::declaration(standalone: true));
+        $document = XmlBuilder::document(XmlBuilder::element('catalog'))
+            ->withDeclaration(XmlBuilder::declaration(standalone: true));
 
-        self::assertSame(
-            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><catalog/>',
-            $document->toString(WriterConfig::compact()),
-        );
+        self::assertTrue($document->declaration()?->standalone() ?? false);
     }
 
-    public function testWriterConfigCanDisableSelfClosingEmptyElements(): void
+    public function testXmlDocumentDoesNotExposeSerializationMethods(): void
     {
-        $document = Xml::document(Xml::element('catalog'));
-
-        self::assertSame(
-            '<catalog></catalog>',
-            $document->withoutDeclaration()->toString(WriterConfig::compact(
-                emitDeclaration: false,
-                selfCloseEmptyElements: false,
-            )),
+        $publicMethods = array_map(
+            static fn (ReflectionMethod $method): string => $method->getName(),
+            (new \ReflectionClass(XmlDocument::class))->getMethods(ReflectionMethod::IS_PUBLIC),
         );
+
+        self::assertNotContains('toString', $publicMethods);
+        self::assertNotContains('saveToFile', $publicMethods);
+        self::assertNotContains('saveToStream', $publicMethods);
     }
 }

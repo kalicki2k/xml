@@ -25,12 +25,12 @@ inside `kalle/xml`.
 
 declare(strict_types=1);
 
-use Kalle\Xml\Builder\Xml;
+use Kalle\Xml\Builder\XmlBuilder;
 use Kalle\Xml\Dom\XmlDomBridge;
 
-$document = Xml::document(
-    Xml::element('catalog')
-        ->child(Xml::element('book')->attribute('isbn', '9780132350884')),
+$document = XmlBuilder::document(
+    XmlBuilder::element('catalog')
+        ->child(XmlBuilder::element('book')->attribute('isbn', '9780132350884')),
 );
 
 $domDocument = XmlDomBridge::toDomDocument($document);
@@ -64,19 +64,20 @@ Use `XmlReader::fromDomDocument()` for a full document and
 
 declare(strict_types=1);
 
-use Kalle\Xml\Builder\Xml;
+use Kalle\Xml\Builder\XmlBuilder;
 use Kalle\Xml\Dom\XmlDomBridge;
 use Kalle\Xml\Import\XmlImporter;
 use Kalle\Xml\Reader\XmlReader;
+use Kalle\Xml\Writer\XmlWriter;
 
 $domDocument = XmlDomBridge::toDomDocument(
-    Xml::document(
-        Xml::element(Xml::qname('feed', 'urn:feed'))
+    XmlBuilder::document(
+        XmlBuilder::element(XmlBuilder::qname('feed', 'urn:feed'))
             ->declareDefaultNamespace('urn:feed')
             ->child(
-                Xml::element(Xml::qname('entry', 'urn:feed'))
+                XmlBuilder::element(XmlBuilder::qname('entry', 'urn:feed'))
                     ->attribute('sku', 'item-1002')
-                    ->child(Xml::element(Xml::qname('title', 'urn:feed'))->text('Notebook set')),
+                    ->child(XmlBuilder::element(XmlBuilder::qname('title', 'urn:feed'))->text('Notebook set')),
             ),
     ),
 );
@@ -86,9 +87,11 @@ $entry = XmlReader::fromDomDocument($domDocument)->findFirst('/feed:feed/feed:en
 ]);
 
 if ($entry !== null) {
-    echo Xml::document(
-        XmlImporter::element($entry)->attribute('exported', true),
-    )->withoutDeclaration()->toString() . "\n";
+    echo XmlWriter::toString(
+        XmlBuilder::document(
+            XmlImporter::element($entry)->attribute('exported', true),
+        )->withoutDeclaration(),
+    ) . "\n";
 }
 ```
 

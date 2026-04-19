@@ -18,8 +18,9 @@ Runtime requirements: `ext-dom`, `ext-libxml`, and `ext-xmlreader`.
 
 ## 2. Choose the Right API
 
-- Use `Xml` when you want to build an XML tree in memory.
-- Use `StreamingXmlWriter` when output should be generated incrementally or written straight to a file or stream.
+- Use `XmlBuilder` when you want to build an immutable XML tree in memory.
+- Use `XmlWriter` when you already have a built document and need a string, file, or stream.
+- Use `StreamingXmlWriter` when output should be generated incrementally or written straight to a file path or PHP stream.
 - Use `StreamingXmlReader` when input is large or incremental and you only need a cursor plus occasional subtree extraction.
 - Use `XmlReader` when you want read-only access to an already loaded XML tree.
 - Use DOM interop when you need to connect writer-side or reader-side XML flows to native `DOMDocument` or `DOMElement` values.
@@ -30,28 +31,33 @@ Runtime requirements: `ext-dom`, `ext-libxml`, and `ext-xmlreader`.
 These stay separate on purpose. `kalle/xml` is not trying to become a broad
 DOM, XPath, or schema framework.
 
-## 3. Write Your First Document with `Xml`
+On the writer side, the rule is simple: `XmlBuilder` builds, `XmlWriter`
+serializes complete documents, and `StreamingXmlWriter` emits XML
+incrementally.
+
+## 3. Write Your First Document with `XmlBuilder`
 
 ```php
 <?php
 
 declare(strict_types=1);
 
-use Kalle\Xml\Builder\Xml;
+use Kalle\Xml\Builder\XmlBuilder;
+use Kalle\Xml\Writer\XmlWriter;
 
-echo Xml::document(
-    Xml::element('catalog')
+echo XmlWriter::toString(XmlBuilder::document(
+    XmlBuilder::element('catalog')
         ->child(
-            Xml::element('book')
+            XmlBuilder::element('book')
                 ->attribute('isbn', '9780132350884')
-                ->child(Xml::element('title')->text('Clean Code')),
+                ->child(XmlBuilder::element('title')->text('Clean Code')),
         ),
-)->toString();
+));
 ```
 
-`Xml` builds immutable writer-side objects. When you need output as something
-other than a string, `XmlDocument` also exposes `saveToFile()` and
-`saveToStream()`.
+`XmlBuilder` builds immutable writer-side objects. `XmlWriter` serializes the
+result through `toString()`, `toFile()`, and `toStream()`. The document model
+itself stays separate from serialization.
 
 ## 4. Write Your First Streaming Example
 
@@ -60,26 +66,31 @@ other than a string, `XmlDocument` also exposes `saveToFile()` and
 
 declare(strict_types=1);
 
-use Kalle\Xml\Builder\Xml;
+use Kalle\Xml\Builder\XmlBuilder;
 use Kalle\Xml\Writer\StreamingXmlWriter;
 
-$writer = StreamingXmlWriter::forString();
+$stream = fopen('php://stdout', 'wb');
+
+if (!is_resource($stream)) {
+    throw new RuntimeException('Could not open stdout for XML output.');
+}
+
+$writer = StreamingXmlWriter::forStream($stream);
 
 $writer
     ->startDocument()
     ->startElement('catalog')
     ->startElement('book')
     ->writeAttribute('isbn', '9780132350884')
-    ->writeElement(Xml::element('title')->text('Clean Code'))
+    ->writeElement(XmlBuilder::element('title')->text('Clean Code'))
     ->endElement()
     ->endElement()
     ->finish();
-
-echo $writer->toString();
 ```
 
 Use streaming when the full tree should not stay in memory or when output
-should go directly to a file path or PHP stream.
+should go directly to a file path or PHP stream. Use `XmlWriter` instead when
+you already have a complete `XmlDocument`.
 
 ## 5. Read Large XML with `StreamingXmlReader`
 
@@ -168,13 +179,16 @@ Continuing from the query example:
 
 declare(strict_types=1);
 
-use Kalle\Xml\Builder\Xml;
+use Kalle\Xml\Builder\XmlBuilder;
 use Kalle\Xml\Import\XmlImporter;
+use Kalle\Xml\Writer\XmlWriter;
 
 if ($entry !== null) {
     $writerElement = XmlImporter::element($entry)->attribute('exported', true);
 
-    echo Xml::document($writerElement)->withoutDeclaration()->toString() . "\n";
+    echo XmlWriter::toString(
+        XmlBuilder::document($writerElement)->withoutDeclaration(),
+    ) . "\n";
 }
 ```
 
@@ -188,15 +202,15 @@ validated through the writer-side model.
 
 declare(strict_types=1);
 
-use Kalle\Xml\Builder\Xml;
+use Kalle\Xml\Builder\XmlBuilder;
 use Kalle\Xml\Validation\XmlValidator;
 
-$catalogDocument = Xml::document(
-    Xml::element('catalog')
+$catalogDocument = XmlBuilder::document(
+    XmlBuilder::element('catalog')
         ->child(
-            Xml::element('book')
+            XmlBuilder::element('book')
                 ->attribute('isbn', '9780132350884')
-                ->child(Xml::element('title')->text('Clean Code')),
+                ->child(XmlBuilder::element('title')->text('Clean Code')),
         ),
 );
 
@@ -233,7 +247,7 @@ invalid schemas still raise exceptions.
 
 ## 10. Keep Namespace Handling Simple
 
-- Use `Xml::qname()` when writing namespaced elements or attributes.
+- Use `XmlBuilder::qname()` when building namespaced elements or attributes.
 - Use `QualifiedName` when a reader lookup must match a specific namespace URI.
 - Default namespaces apply to elements, not attributes.
 - Namespaced attributes need an explicit prefix.

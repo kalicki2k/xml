@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 
-use Kalle\Xml\Builder\Xml;
+use Kalle\Xml\Builder\XmlBuilder;
 use Kalle\Xml\Reader\XmlReader;
 
 $stream = fopen('php://temp', 'wb+');
@@ -38,13 +38,13 @@ try {
     $document = XmlReader::fromStream($stream);
     $root = $document->rootElement();
     $endpoint = $root
-        ->firstChildElement(Xml::qname('AccountingSupplierParty', 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2', 'cac'))
-        ?->firstChildElement(Xml::qname('Party', 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2', 'cac'))
-        ?->firstChildElement(Xml::qname('EndpointID', 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2', 'cbc'));
+        ->firstChildElement(XmlBuilder::qname('AccountingSupplierParty', 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2', 'cac'))
+        ?->firstChildElement(XmlBuilder::qname('Party', 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2', 'cac'))
+        ?->firstChildElement(XmlBuilder::qname('EndpointID', 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2', 'cbc'));
 
     echo sprintf(
         "%s | %s\n",
-        $root->firstChildElement(Xml::qname('ID', 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2', 'cbc'))?->text() ?? 'n/a',
+        $root->firstChildElement(XmlBuilder::qname('ID', 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2', 'cbc'))?->text() ?? 'n/a',
         $endpoint?->attributeValue('schemeID') ?? 'n/a',
     );
 } finally {

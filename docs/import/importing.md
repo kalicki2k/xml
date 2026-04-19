@@ -26,9 +26,10 @@ needs writer-side operations.
 
 declare(strict_types=1);
 
-use Kalle\Xml\Builder\Xml;
+use Kalle\Xml\Builder\XmlBuilder;
 use Kalle\Xml\Import\XmlImporter;
 use Kalle\Xml\Reader\XmlReader;
+use Kalle\Xml\Writer\XmlWriter;
 
 $document = XmlReader::fromString(
     '<feed xmlns="urn:feed"><entry sku="item-1002"><title>Notebook set</title></entry></feed>',
@@ -41,7 +42,9 @@ $entry = $document->findFirst('/feed:feed/feed:entry[@sku="item-1002"]', [
 if ($entry !== null) {
     $writerElement = XmlImporter::element($entry)->attribute('exported', true);
 
-    echo Xml::document($writerElement)->withoutDeclaration()->toString() . "\n";
+    echo XmlWriter::toString(
+        XmlBuilder::document($writerElement)->withoutDeclaration(),
+    ) . "\n";
 }
 ```
 
@@ -53,7 +56,9 @@ if ($entry !== null) {
 - root-level namespace declarations rebuilt from the imported subtree
 
 Imported results are regular `Element` and `XmlDocument` instances. They work
-with `Xml`, `StreamingXmlWriter`, and `XmlValidator`.
+with `XmlBuilder`, `XmlWriter`, `StreamingXmlWriter`, and `XmlValidator`.
+Build a new document with `XmlBuilder`, serialize it with `XmlWriter`, or
+stream imported subtrees incrementally with `StreamingXmlWriter`.
 
 ## Boundaries
 

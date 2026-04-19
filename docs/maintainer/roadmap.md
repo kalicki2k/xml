@@ -7,7 +7,8 @@ reader, a separate read-only tree reader, a small query layer built on top of
 that tree reader model, explicit DOM interop, a compact reader-to-writer
 import bridge, and compact XSD validation as separate capabilities:
 
-- `Xml` for tree-based XML construction
+- `XmlBuilder` for tree-based XML construction
+- `XmlWriter` for whole-document serialization
 - `StreamingXmlWriter` for incremental XML writing
 - `StreamingXmlReader` for incremental, cursor-based XML reading from files and streams
 - `XmlReader` for namespace-aware document and element traversal
@@ -22,7 +23,7 @@ The v1.7 milestone adds:
 - incremental, namespace-aware streaming XML reading from files and streams
 - a compact streaming cursor API centered on `read()`, `nodeType()`, `isStartElement()`, `expandElement()`, and `extractElementXml()`
 - subtree extraction from `StreamingXmlReader` back into the existing `ReaderElement`, `XmlReader`, `XmlImporter`, `XmlValidator`, and writer flows
-- read-only document and element traversal without reader concerns leaking into `Xml`
+- read-only document and element traversal without reader concerns leaking into `XmlBuilder`
 - namespace-aware element names, attribute access, and in-scope namespace inspection
 - compact reader traversal centered around `rootElement()`, `firstChildElement()`, and `childElements()`
 - a small XPath-style query layer centered around element-oriented `findAll()` and `findFirst()` results on the reader model

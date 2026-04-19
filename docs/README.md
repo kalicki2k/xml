@@ -6,6 +6,10 @@ This docs tree separates onboarding, capability guides, conceptual
 explanations, and the API reference so the package stays easy to navigate and
 maintain as its XML surface grows.
 
+On the writer side, it also keeps the responsibilities explicit: build with
+`XmlBuilder`, serialize complete documents with `XmlWriter`, and stream
+incrementally with `StreamingXmlWriter`.
+
 ## Start Here
 
 - [Landing page](../README.md)

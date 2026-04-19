@@ -4,19 +4,22 @@ declare(strict_types=1);
 
 namespace Kalle\Xml\Tests\Integration;
 
-use Kalle\Xml\Builder\Xml;
+use Kalle\Xml\Builder\XmlBuilder;
 use Kalle\Xml\Import\XmlImporter;
 use Kalle\Xml\Reader\StreamingXmlReader;
 use Kalle\Xml\Reader\XmlReader;
 use Kalle\Xml\Writer\StreamingXmlWriter;
 use Kalle\Xml\Writer\WriterConfig;
+use Kalle\Xml\Writer\XmlWriter;
 use PHPUnit\Framework\TestCase;
 
 use function fclose;
 use function file_put_contents;
 use function fopen;
 use function fwrite;
+use function is_resource;
 use function rewind;
+use function stream_get_contents;
 use function sys_get_temp_dir;
 use function tempnam;
 use function unlink;
@@ -92,11 +95,11 @@ final class StreamingXmlReaderRealisticIntegrationTest extends TestCase
             $matchedEntries = [];
 
             while ($reader->read()) {
-                if (!$reader->isStartElement(Xml::qname('entry', self::FEED_NS))) {
+                if (!$reader->isStartElement(XmlBuilder::qname('entry', self::FEED_NS))) {
                     continue;
                 }
 
-                if ($reader->attributeValue(Xml::qname('href', self::XLINK_NS, 'xlink')) === null) {
+                if ($reader->attributeValue(XmlBuilder::qname('href', self::XLINK_NS, 'xlink')) === null) {
                     continue;
                 }
 
@@ -108,10 +111,10 @@ final class StreamingXmlReaderRealisticIntegrationTest extends TestCase
 
                 $matchedEntries[] = [
                     'sku' => $entry->attributeValue('sku'),
-                    'href' => $entry->attributeValue(Xml::qname('href', self::XLINK_NS, 'xlink')),
+                    'href' => $entry->attributeValue(XmlBuilder::qname('href', self::XLINK_NS, 'xlink')),
                     'title' => $entry->findFirst('./feed:title', ['feed' => self::FEED_NS])?->text(),
                     'identifier' => $entry->findFirst('./dc:identifier', ['dc' => self::DC_NS])?->text(),
-                    'thumbnailHref' => $thumbnail?->attributeValue(Xml::qname('href', self::XLINK_NS, 'xlink')),
+                    'thumbnailHref' => $thumbnail?->attributeValue(XmlBuilder::qname('href', self::XLINK_NS, 'xlink')),
                 ];
             }
 
@@ -157,16 +160,19 @@ final class StreamingXmlReaderRealisticIntegrationTest extends TestCase
             $lineExport = null;
 
             while ($reader->read()) {
-                if ($reader->isStartElement(Xml::qname('AccountingSupplierParty', self::UBL_CAC_NS, 'cac'))) {
-                    $supplierExport = Xml::document(
-                        Xml::element('supplier-export')
-                            ->child(XmlImporter::element($reader->expandElement())),
-                    )->withoutDeclaration()->toString(WriterConfig::compact(emitDeclaration: false));
+                if ($reader->isStartElement(XmlBuilder::qname('AccountingSupplierParty', self::UBL_CAC_NS, 'cac'))) {
+                    $supplierExport = XmlWriter::toString(
+                        XmlBuilder::document(
+                            XmlBuilder::element('supplier-export')
+                                ->child(XmlImporter::element($reader->expandElement())),
+                        )->withoutDeclaration(),
+                        WriterConfig::compact(emitDeclaration: false),
+                    );
 
                     continue;
                 }
 
-                if (!$reader->isStartElement(Xml::qname('InvoiceLine', self::UBL_CAC_NS, 'cac'))) {
+                if (!$reader->isStartElement(XmlBuilder::qname('InvoiceLine', self::UBL_CAC_NS, 'cac'))) {
                     continue;
                 }
 
@@ -176,10 +182,13 @@ final class StreamingXmlReaderRealisticIntegrationTest extends TestCase
                     continue;
                 }
 
-                $lineExport = Xml::document(
-                    Xml::element('line-export')
-                        ->child(XmlImporter::element($invoiceLine)),
-                )->withoutDeclaration()->toString(WriterConfig::compact(emitDeclaration: false));
+                $lineExport = XmlWriter::toString(
+                    XmlBuilder::document(
+                        XmlBuilder::element('line-export')
+                            ->child(XmlImporter::element($invoiceLine)),
+                    )->withoutDeclaration(),
+                    WriterConfig::compact(emitDeclaration: false),
+                );
             }
 
             self::assertSame(
@@ -205,31 +214,30 @@ final class StreamingXmlReaderRealisticIntegrationTest extends TestCase
 
         try {
             $reader = StreamingXmlReader::fromStream($stream);
-            $writer = StreamingXmlWriter::forString(
-                WriterConfig::compact(emitDeclaration: false),
-            );
-
-            $writer->startElement('selection');
-
-            while ($reader->read()) {
-                if (!$reader->isStartElement(Xml::qname('entry', self::FEED_NS))) {
-                    continue;
-                }
-
-                if ($reader->attributeValue('sku') === 'item-1002') {
-                    continue;
-                }
-
-                $writer->writeElement(
-                    XmlImporter::element($reader->expandElement())->attribute('selected', true),
-                );
-            }
-
-            $writer->endElement()->finish();
-
             self::assertSame(
                 '<selection><entry xmlns="urn:feed" xmlns:dc="' . self::DC_NS . '" xmlns:media="' . self::MEDIA_NS . '" xmlns:xlink="' . self::XLINK_NS . '" sku="item-1001" xlink:href="https://example.com/products/item-1001" selected="true"><title>Blue mug</title><dc:identifier>item-1001</dc:identifier><media:thumbnail xlink:href="https://cdn.example.com/products/item-1001.jpg" width="320" height="180"/></entry><entry xmlns="urn:feed" xmlns:dc="' . self::DC_NS . '" xmlns:media="' . self::MEDIA_NS . '" xmlns:xlink="' . self::XLINK_NS . '" sku="item-1003" xlink:href="https://example.com/products/item-1003" selected="true"><title>Desk lamp</title><dc:identifier>item-1003</dc:identifier><media:thumbnail xlink:href="https://cdn.example.com/products/item-1003.jpg" width="320" height="180"/></entry></selection>',
-                $writer->toString(),
+                $this->streamToString(
+                    WriterConfig::compact(emitDeclaration: false),
+                    static function (StreamingXmlWriter $writer) use ($reader): void {
+                        $writer->startElement('selection');
+
+                        while ($reader->read()) {
+                            if (!$reader->isStartElement(XmlBuilder::qname('entry', self::FEED_NS))) {
+                                continue;
+                            }
+
+                            if ($reader->attributeValue('sku') === 'item-1002') {
+                                continue;
+                            }
+
+                            $writer->writeElement(
+                                XmlImporter::element($reader->expandElement())->attribute('selected', true),
+                            );
+                        }
+
+                        $writer->endElement();
+                    },
+                ),
             );
         } finally {
             fclose($stream);
@@ -317,5 +325,28 @@ XML;
     </cac:InvoiceLine>
 </Invoice>
 XML;
+    }
+
+    /**
+     * @param callable(StreamingXmlWriter): void $write
+     */
+    private function streamToString(WriterConfig $config, callable $write): string
+    {
+        $stream = fopen('php://temp', 'wb+');
+
+        self::assertIsResource($stream);
+
+        try {
+            $writer = StreamingXmlWriter::forStream($stream, $config);
+            $write($writer);
+            $writer->finish();
+            rewind($stream);
+
+            return (string) stream_get_contents($stream);
+        } finally {
+            if (is_resource($stream)) {
+                fclose($stream);
+            }
+        }
     }
 }

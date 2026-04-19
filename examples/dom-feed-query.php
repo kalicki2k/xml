@@ -4,33 +4,33 @@ declare(strict_types=1);
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 
-use Kalle\Xml\Builder\Xml;
+use Kalle\Xml\Builder\XmlBuilder;
 use Kalle\Xml\Dom\XmlDomBridge;
 use Kalle\Xml\Reader\XmlReader;
 
-$writerDocument = Xml::document(
-    Xml::element(Xml::qname('feed', 'urn:feed'))
+$writerDocument = XmlBuilder::document(
+    XmlBuilder::element(XmlBuilder::qname('feed', 'urn:feed'))
         ->declareDefaultNamespace('urn:feed')
         ->declareNamespace('dc', 'urn:dc')
         ->declareNamespace('media', 'urn:media')
         ->declareNamespace('xlink', 'urn:xlink')
         ->child(
-            Xml::element(Xml::qname('entry', 'urn:feed'))
-                ->attribute(Xml::qname('href', 'urn:xlink', 'xlink'), 'https://example.com/products/item-1001')
-                ->child(Xml::element(Xml::qname('title', 'urn:feed'))->text('Blue mug'))
-                ->child(Xml::element(Xml::qname('identifier', 'urn:dc', 'dc'))->text('item-1001'))
+            XmlBuilder::element(XmlBuilder::qname('entry', 'urn:feed'))
+                ->attribute(XmlBuilder::qname('href', 'urn:xlink', 'xlink'), 'https://example.com/products/item-1001')
+                ->child(XmlBuilder::element(XmlBuilder::qname('title', 'urn:feed'))->text('Blue mug'))
+                ->child(XmlBuilder::element(XmlBuilder::qname('identifier', 'urn:dc', 'dc'))->text('item-1001'))
                 ->child(
-                    Xml::element(Xml::qname('thumbnail', 'urn:media', 'media'))
-                        ->attribute(Xml::qname('href', 'urn:xlink', 'xlink'), 'https://cdn.example.com/products/item-1001.jpg')
+                    XmlBuilder::element(XmlBuilder::qname('thumbnail', 'urn:media', 'media'))
+                        ->attribute(XmlBuilder::qname('href', 'urn:xlink', 'xlink'), 'https://cdn.example.com/products/item-1001.jpg')
                         ->attribute('width', 320)
                         ->attribute('height', 180),
                 ),
         )
         ->child(
-            Xml::element(Xml::qname('entry', 'urn:feed'))
-                ->attribute(Xml::qname('href', 'urn:xlink', 'xlink'), 'https://example.com/products/item-1002')
-                ->child(Xml::element(Xml::qname('title', 'urn:feed'))->text('Notebook set'))
-                ->child(Xml::element(Xml::qname('identifier', 'urn:dc', 'dc'))->text('item-1002')),
+            XmlBuilder::element(XmlBuilder::qname('entry', 'urn:feed'))
+                ->attribute(XmlBuilder::qname('href', 'urn:xlink', 'xlink'), 'https://example.com/products/item-1002')
+                ->child(XmlBuilder::element(XmlBuilder::qname('title', 'urn:feed'))->text('Notebook set'))
+                ->child(XmlBuilder::element(XmlBuilder::qname('identifier', 'urn:dc', 'dc'))->text('item-1002')),
         ),
 )->withoutDeclaration();
 
@@ -55,5 +55,5 @@ echo sprintf(
     "%s | %s | %s\n",
     $entry->findFirst('./feed:title', $queryNamespaces)?->text() ?? 'unknown',
     $entry->findFirst('./dc:identifier', $queryNamespaces)?->text() ?? 'n/a',
-    $entry->attributeValue(Xml::qname('href', 'urn:xlink', 'xlink')) ?? 'n/a',
+    $entry->attributeValue(XmlBuilder::qname('href', 'urn:xlink', 'xlink')) ?? 'n/a',
 );

@@ -6,10 +6,11 @@ namespace Kalle\Xml\Tests\Integration;
 
 use DOMDocument;
 use DOMElement;
-use Kalle\Xml\Builder\Xml;
+use Kalle\Xml\Builder\XmlBuilder;
 use Kalle\Xml\Import\XmlImporter;
 use Kalle\Xml\Reader\XmlReader;
 use Kalle\Xml\Writer\WriterConfig;
+use Kalle\Xml\Writer\XmlWriter;
 use PHPUnit\Framework\TestCase;
 
 final class XmlReaderDomInteropIntegrationTest extends TestCase
@@ -52,7 +53,7 @@ final class XmlReaderDomInteropIntegrationTest extends TestCase
 
         $readerDocument = XmlReader::fromDomDocument($domDocument);
         $root = $readerDocument->rootElement();
-        $entry = $root->firstChildElement(Xml::qname('entry', 'urn:feed'));
+        $entry = $root->firstChildElement(XmlBuilder::qname('entry', 'urn:feed'));
 
         self::assertSame('feed', $root->name());
         self::assertSame('urn:feed', $root->namespaceUri());
@@ -60,15 +61,15 @@ final class XmlReaderDomInteropIntegrationTest extends TestCase
         self::assertNotNull($entry);
         self::assertSame(
             'https://example.com/items/1',
-            $entry->attributeValue(Xml::qname('href', 'urn:xlink', 'xlink')),
+            $entry->attributeValue(XmlBuilder::qname('href', 'urn:xlink', 'xlink')),
         );
         self::assertSame(
             'Blue mug',
-            $entry->firstChildElement(Xml::qname('title', 'urn:feed'))?->text(),
+            $entry->firstChildElement(XmlBuilder::qname('title', 'urn:feed'))?->text(),
         );
         self::assertSame(
             'item-1001',
-            $entry->firstChildElement(Xml::qname('identifier', 'urn:dc', 'dc'))?->text(),
+            $entry->firstChildElement(XmlBuilder::qname('identifier', 'urn:dc', 'dc'))?->text(),
         );
     }
 
@@ -92,7 +93,7 @@ final class XmlReaderDomInteropIntegrationTest extends TestCase
         self::assertCount(1, $readerElement->childElements());
         self::assertSame(
             'Notebook set',
-            $readerElement->firstChildElement(Xml::qname('title', 'urn:feed'))?->text(),
+            $readerElement->firstChildElement(XmlBuilder::qname('title', 'urn:feed'))?->text(),
         );
         self::assertSame('feed', $readerElement->parent()?->name());
     }
@@ -113,13 +114,13 @@ final class XmlReaderDomInteropIntegrationTest extends TestCase
 
         self::assertNotNull($entry);
 
-        $document = Xml::document(
+        $document = XmlBuilder::document(
             XmlImporter::element($entry)->attribute('exported', true),
         )->withoutDeclaration();
 
         self::assertSame(
             '<entry xmlns="urn:feed" xmlns:xlink="urn:xlink" sku="item-1002" xlink:href="https://example.com/items/2" exported="true"><title>Notebook set</title></entry>',
-            $document->toString(WriterConfig::compact(emitDeclaration: false)),
+            XmlWriter::toString($document, WriterConfig::compact(emitDeclaration: false)),
         );
     }
 }

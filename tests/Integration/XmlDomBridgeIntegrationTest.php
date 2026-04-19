@@ -4,28 +4,36 @@ declare(strict_types=1);
 
 namespace Kalle\Xml\Tests\Integration;
 
+use DOMAttr;
 use DOMCdataSection;
 use DOMComment;
 use DOMDocument;
-use DOMAttr;
 use DOMElement;
 use DOMProcessingInstruction;
-use Kalle\Xml\Builder\Xml;
+use Kalle\Xml\Builder\XmlBuilder;
 use Kalle\Xml\Dom\XmlDomBridge;
 use Kalle\Xml\Import\XmlImporter;
 use Kalle\Xml\Reader\XmlReader;
 use Kalle\Xml\Writer\StreamingXmlWriter;
 use Kalle\Xml\Writer\WriterConfig;
+use Kalle\Xml\Writer\XmlWriter;
 use PHPUnit\Framework\TestCase;
+
+use function fclose;
+use function fopen;
+use function is_resource;
+use function rewind;
+use function stream_get_contents;
+use function trim;
 
 final class XmlDomBridgeIntegrationTest extends TestCase
 {
     public function testItExportsXmlDocumentsIntoDomDocuments(): void
     {
-        $document = Xml::document(
-            Xml::element('catalog')
+        $document = XmlBuilder::document(
+            XmlBuilder::element('catalog')
                 ->child(
-                    Xml::element('book')
+                    XmlBuilder::element('book')
                         ->attribute('isbn', '9780132350884')
                         ->text('Clean Code'),
                 ),
@@ -53,11 +61,11 @@ final class XmlDomBridgeIntegrationTest extends TestCase
 
     public function testItExportsNamespaceAwareWriterTreesIntoDomWithResolvedNamespaces(): void
     {
-        $document = Xml::document(
-            Xml::element(Xml::qname('feed', 'urn:feed'))
+        $document = XmlBuilder::document(
+            XmlBuilder::element(XmlBuilder::qname('feed', 'urn:feed'))
                 ->declareDefaultNamespace('urn:feed')
-                ->child(Xml::element('entry'))
-                ->child(Xml::element(Xml::qname('thumbnail', 'urn:media', 'media'))),
+                ->child(XmlBuilder::element('entry'))
+                ->child(XmlBuilder::element(XmlBuilder::qname('thumbnail', 'urn:media', 'media'))),
         )->withoutDeclaration();
 
         $domDocument = XmlDomBridge::toDomDocument($document);
@@ -85,18 +93,18 @@ final class XmlDomBridgeIntegrationTest extends TestCase
 
     public function testItExportsCommentsCdataProcessingInstructionsAndMixedContentIntoDom(): void
     {
-        $document = Xml::document(
-            Xml::element('payload')
+        $document = XmlBuilder::document(
+            XmlBuilder::element('payload')
                 ->comment('generated export')
                 ->child(
-                    Xml::element('script')
+                    XmlBuilder::element('script')
                         ->cdata('if (a < b && c > d) { return "ok"; }'),
                 )
                 ->processingInstruction('cache-control', 'ttl="300"')
                 ->child(
-                    Xml::element('p')
+                    XmlBuilder::element('p')
                         ->text('Hello ')
-                        ->child(Xml::element('strong')->text('world'))
+                        ->child(XmlBuilder::element('strong')->text('world'))
                         ->text('!'),
                 ),
         )->withoutDeclaration();
@@ -134,10 +142,10 @@ final class XmlDomBridgeIntegrationTest extends TestCase
 
     public function testItExportsWriterElementsIntoDomDocuments(): void
     {
-        $element = Xml::element(Xml::qname('entry', 'urn:feed'))
+        $element = XmlBuilder::element(XmlBuilder::qname('entry', 'urn:feed'))
             ->declareDefaultNamespace('urn:feed')
             ->attribute('sku', 'item-1002')
-            ->child(Xml::element(Xml::qname('title', 'urn:feed'))->text('Notebook set'));
+            ->child(XmlBuilder::element(XmlBuilder::qname('title', 'urn:feed'))->text('Notebook set'));
 
         $domDocument = XmlDomBridge::elementToDomDocument($element);
         $documentRoot = $domDocument->documentElement;
@@ -170,18 +178,18 @@ final class XmlDomBridgeIntegrationTest extends TestCase
 
     public function testItPreservesPrefixedAttributesAndDefaultNamespaceSemanticsAcrossWriterDomReaderRoundtrip(): void
     {
-        $writerDocument = Xml::document(
-            Xml::element(Xml::qname('feed', 'urn:feed'))
+        $writerDocument = XmlBuilder::document(
+            XmlBuilder::element(XmlBuilder::qname('feed', 'urn:feed'))
                 ->declareDefaultNamespace('urn:feed')
                 ->declareNamespace('xlink', 'urn:xlink')
                 ->child(
-                    Xml::element(Xml::qname('entry', 'urn:feed'))
+                    XmlBuilder::element(XmlBuilder::qname('entry', 'urn:feed'))
                         ->attribute('sku', 'item-1002')
                         ->attribute(
-                            Xml::qname('href', 'urn:xlink', 'xlink'),
+                            XmlBuilder::qname('href', 'urn:xlink', 'xlink'),
                             'https://example.com/items/2',
                         )
-                        ->child(Xml::element(Xml::qname('title', 'urn:feed'))->text('Notebook set')),
+                        ->child(XmlBuilder::element(XmlBuilder::qname('title', 'urn:feed'))->text('Notebook set')),
                 ),
         )->withoutDeclaration();
 
@@ -213,41 +221,41 @@ final class XmlDomBridgeIntegrationTest extends TestCase
         self::assertSame('item-1002', $queriedEntry->attributeValue('sku'));
         self::assertSame(
             'https://example.com/items/2',
-            $queriedEntry->attributeValue(Xml::qname('href', 'urn:xlink', 'xlink')),
+            $queriedEntry->attributeValue(XmlBuilder::qname('href', 'urn:xlink', 'xlink')),
         );
 
         $imported = XmlImporter::document($readerDocument)->withoutDeclaration();
 
         self::assertSame(
             '<feed xmlns="urn:feed" xmlns:xlink="urn:xlink"><entry sku="item-1002" xlink:href="https://example.com/items/2"><title>Notebook set</title></entry></feed>',
-            $imported->toString(WriterConfig::compact(emitDeclaration: false)),
+            XmlWriter::toString($imported, WriterConfig::compact(emitDeclaration: false)),
         );
     }
 
     public function testItPreservesMixedNestedNamespaceScopesAcrossWriterDomReaderImportRoundtrip(): void
     {
-        $writerDocument = Xml::document(
-            Xml::element(Xml::qname('catalog', 'urn:catalog'))
+        $writerDocument = XmlBuilder::document(
+            XmlBuilder::element(XmlBuilder::qname('catalog', 'urn:catalog'))
                 ->declareDefaultNamespace('urn:catalog')
                 ->child(
-                    Xml::element(Xml::qname('item', 'urn:catalog'))
+                    XmlBuilder::element(XmlBuilder::qname('item', 'urn:catalog'))
                         ->attribute('sku', 'item-1001')
-                        ->child(Xml::element(Xml::qname('title', 'urn:catalog'))->text('Notebook'))
+                        ->child(XmlBuilder::element(XmlBuilder::qname('title', 'urn:catalog'))->text('Notebook'))
                         ->child(
-                            Xml::element(Xml::qname('flag', 'urn:catalog-meta', 'meta'))
+                            XmlBuilder::element(XmlBuilder::qname('flag', 'urn:catalog-meta', 'meta'))
                                 ->declareNamespace('meta', 'urn:catalog-meta')
-                                ->attribute(Xml::qname('code', 'urn:catalog-meta', 'meta'), 'featured')
+                                ->attribute(XmlBuilder::qname('code', 'urn:catalog-meta', 'meta'), 'featured')
                                 ->text('yes'),
                         ),
                 )
                 ->child(
-                    Xml::element(Xml::qname('bundle', 'urn:bundle'))
+                    XmlBuilder::element(XmlBuilder::qname('bundle', 'urn:bundle'))
                         ->declareDefaultNamespace('urn:bundle')
-                        ->child(Xml::element(Xml::qname('title', 'urn:bundle'))->text('Starter bundle'))
+                        ->child(XmlBuilder::element(XmlBuilder::qname('title', 'urn:bundle'))->text('Starter bundle'))
                         ->child(
-                            Xml::element(Xml::qname('flag', 'urn:bundle-meta', 'meta'))
+                            XmlBuilder::element(XmlBuilder::qname('flag', 'urn:bundle-meta', 'meta'))
                                 ->declareNamespace('meta', 'urn:bundle-meta')
-                                ->attribute(Xml::qname('code', 'urn:bundle-meta', 'meta'), 'bundle')
+                                ->attribute(XmlBuilder::qname('code', 'urn:bundle-meta', 'meta'), 'bundle')
                                 ->text('special'),
                         ),
                 ),
@@ -280,24 +288,24 @@ final class XmlDomBridgeIntegrationTest extends TestCase
 
         self::assertSame(
             '<catalog xmlns="urn:catalog"><item sku="item-1001"><title>Notebook</title><meta:flag xmlns:meta="urn:catalog-meta" meta:code="featured">yes</meta:flag></item><bundle xmlns="urn:bundle"><title>Starter bundle</title><meta:flag xmlns:meta="urn:bundle-meta" meta:code="bundle">special</meta:flag></bundle></catalog>',
-            $imported->toString(WriterConfig::compact(emitDeclaration: false)),
+            XmlWriter::toString($imported, WriterConfig::compact(emitDeclaration: false)),
         );
     }
 
     public function testItSupportsElementDomReaderStreamingWriterWorkflowsWithNonElementContent(): void
     {
-        $element = Xml::element(Xml::qname('entry', 'urn:feed'))
+        $element = XmlBuilder::element(XmlBuilder::qname('entry', 'urn:feed'))
             ->declareDefaultNamespace('urn:feed')
             ->declareNamespace('xlink', 'urn:xlink')
             ->attribute('sku', 'item-1002')
             ->attribute(
-                Xml::qname('href', 'urn:xlink', 'xlink'),
+                XmlBuilder::qname('href', 'urn:xlink', 'xlink'),
                 'https://example.com/items/2',
             )
-            ->child(Xml::element(Xml::qname('title', 'urn:feed'))->text('Notebook set'))
+            ->child(XmlBuilder::element(XmlBuilder::qname('title', 'urn:feed'))->text('Notebook set'))
             ->comment('generated export')
             ->child(
-                Xml::element(Xml::qname('script', 'urn:feed'))
+                XmlBuilder::element(XmlBuilder::qname('script', 'urn:feed'))
                     ->cdata('if (a < b && c > d) { return "ok"; }'),
             )
             ->processingInstruction('cache-control', 'ttl="300"');
@@ -308,36 +316,34 @@ final class XmlDomBridgeIntegrationTest extends TestCase
         self::assertNotNull($documentRoot);
 
         $readerElement = XmlReader::fromDomElement($documentRoot);
-        $writer = StreamingXmlWriter::forString(
-            WriterConfig::compact(emitDeclaration: false),
-        );
-
-        $writer
-            ->startElement('export')
-            ->writeElement(XmlImporter::element($readerElement))
-            ->endElement()
-            ->finish();
-
         self::assertSame(
             '<export><entry xmlns="urn:feed" xmlns:xlink="urn:xlink" sku="item-1002" xlink:href="https://example.com/items/2"><title>Notebook set</title><!--generated export--><script><![CDATA[if (a < b && c > d) { return "ok"; }]]></script><?cache-control ttl="300"?></entry></export>',
-            $writer->toString(),
+            $this->streamToString(
+                WriterConfig::compact(emitDeclaration: false),
+                static function (StreamingXmlWriter $writer) use ($readerElement): void {
+                    $writer
+                        ->startElement('export')
+                        ->writeElement(XmlImporter::element($readerElement))
+                        ->endElement();
+                },
+            ),
         );
     }
 
     public function testItSupportsWriterDomReaderQueryImportWriteWorkflows(): void
     {
-        $writerDocument = Xml::document(
-            Xml::element(Xml::qname('feed', 'urn:feed'))
+        $writerDocument = XmlBuilder::document(
+            XmlBuilder::element(XmlBuilder::qname('feed', 'urn:feed'))
                 ->declareDefaultNamespace('urn:feed')
                 ->child(
-                    Xml::element(Xml::qname('entry', 'urn:feed'))
+                    XmlBuilder::element(XmlBuilder::qname('entry', 'urn:feed'))
                         ->attribute('sku', 'item-1001')
-                        ->child(Xml::element(Xml::qname('title', 'urn:feed'))->text('Blue mug')),
+                        ->child(XmlBuilder::element(XmlBuilder::qname('title', 'urn:feed'))->text('Blue mug')),
                 )
                 ->child(
-                    Xml::element(Xml::qname('entry', 'urn:feed'))
+                    XmlBuilder::element(XmlBuilder::qname('entry', 'urn:feed'))
                         ->attribute('sku', 'item-1002')
-                        ->child(Xml::element(Xml::qname('title', 'urn:feed'))->text('Notebook set')),
+                        ->child(XmlBuilder::element(XmlBuilder::qname('title', 'urn:feed'))->text('Notebook set')),
                 ),
         );
 
@@ -349,13 +355,36 @@ final class XmlDomBridgeIntegrationTest extends TestCase
 
         self::assertNotNull($entry);
 
-        $result = Xml::document(
+        $result = XmlBuilder::document(
             XmlImporter::element($entry)->attribute('exported', true),
         )->withoutDeclaration();
 
         self::assertSame(
             '<entry xmlns="urn:feed" sku="item-1002" exported="true"><title>Notebook set</title></entry>',
-            $result->toString(WriterConfig::compact(emitDeclaration: false)),
+            XmlWriter::toString($result, WriterConfig::compact(emitDeclaration: false)),
         );
+    }
+
+    /**
+     * @param callable(StreamingXmlWriter): void $write
+     */
+    private function streamToString(WriterConfig $config, callable $write): string
+    {
+        $stream = fopen('php://temp', 'wb+');
+
+        self::assertIsResource($stream);
+
+        try {
+            $writer = StreamingXmlWriter::forStream($stream, $config);
+            $write($writer);
+            $writer->finish();
+            rewind($stream);
+
+            return (string) stream_get_contents($stream);
+        } finally {
+            if (is_resource($stream)) {
+                fclose($stream);
+            }
+        }
     }
 }

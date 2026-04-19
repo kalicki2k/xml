@@ -2,13 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Kalle\Xml\Validate;
+namespace Kalle\Xml\Name;
 
 use Kalle\Xml\Exception\InvalidXmlName;
 
 use function preg_match;
 use function str_contains;
 use function strcasecmp;
+use function sprintf;
 
 final class XmlNameValidator
 {
@@ -34,7 +35,7 @@ final class XmlNameValidator
                 '%s name "%s" looks prefixed. Use %s.',
                 $context,
                 $name,
-                'Xml::qname()',
+                'XmlBuilder::qname()',
             ));
         }
 

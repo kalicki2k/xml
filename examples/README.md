@@ -17,14 +17,14 @@ Use them alongside the docs:
 
 ## Document Model
 
-- `catalog.php` builds a small pretty-printed catalog with `Xml`.
-- `namespaced-feed.php` builds a namespace-aware feed with `Xml::qname()`.
+- `catalog.php` builds a small catalog with `XmlBuilder` and serializes the finished document with `XmlWriter`.
+- `namespaced-feed.php` builds a namespace-aware feed with `XmlBuilder::qname()` and serializes the finished document with `XmlWriter`.
 
 ## Streaming Writer
 
-- `streaming-catalog.php` streams a catalog export incrementally to `php://stdout`.
-- `streaming-feed.php` streams a namespace-aware feed incrementally to `php://stdout`.
-- `streaming-to-file.php` writes to a file path and mixes prebuilt subtrees into the stream.
+- `streaming-catalog.php` writes a catalog incrementally to `php://stdout`.
+- `streaming-feed.php` writes a namespace-aware feed incrementally to `php://stdout`.
+- `streaming-to-file.php` writes incrementally to a file path and mixes prebuilt subtrees into the stream.
 
 ## Streaming Reader
 

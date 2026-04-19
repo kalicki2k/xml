@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 
-use Kalle\Xml\Builder\Xml;
+use Kalle\Xml\Builder\XmlBuilder;
 use Kalle\Xml\Reader\XmlReader;
 
 $xml = <<<'XML'
@@ -27,14 +27,14 @@ file_put_contents($path, $xml);
 
 try {
     $document = XmlReader::fromFile($path);
-    $entry = $document->rootElement()->firstChildElement(Xml::qname('entry', 'urn:feed'));
+    $entry = $document->rootElement()->firstChildElement(XmlBuilder::qname('entry', 'urn:feed'));
 
     if ($entry !== null) {
         echo sprintf(
             "%s | %s | %s\n",
-            $entry->firstChildElement(Xml::qname('title', 'urn:feed'))?->text() ?? 'unknown',
-            $entry->firstChildElement(Xml::qname('identifier', 'urn:dc', 'dc'))?->text() ?? 'n/a',
-            $entry->attributeValue(Xml::qname('href', 'urn:xlink', 'xlink')) ?? 'n/a',
+            $entry->firstChildElement(XmlBuilder::qname('title', 'urn:feed'))?->text() ?? 'unknown',
+            $entry->firstChildElement(XmlBuilder::qname('identifier', 'urn:dc', 'dc'))?->text() ?? 'n/a',
+            $entry->attributeValue(XmlBuilder::qname('href', 'urn:xlink', 'xlink')) ?? 'n/a',
         );
     }
 } finally {

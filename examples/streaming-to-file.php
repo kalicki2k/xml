@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 
-use Kalle\Xml\Builder\Xml;
+use Kalle\Xml\Builder\XmlBuilder;
 use Kalle\Xml\Writer\StreamingXmlWriter;
 use Kalle\Xml\Writer\WriterConfig;
 
@@ -36,10 +36,10 @@ $writer
 
 foreach ($books as $book) {
     $writer->writeElement(
-        Xml::element('book')
+        XmlBuilder::element('book')
             ->attribute('isbn', $book['isbn'])
-            ->child(Xml::element('title')->text($book['title']))
-            ->child(Xml::element('price')->attribute('currency', 'EUR')->text($book['price'])),
+            ->child(XmlBuilder::element('title')->text($book['title']))
+            ->child(XmlBuilder::element('price')->attribute('currency', 'EUR')->text($book['price'])),
     );
 }
 

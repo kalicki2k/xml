@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Kalle\Xml\Tests\Integration;
 
-use Kalle\Xml\Builder\Xml;
+use Kalle\Xml\Builder\XmlBuilder;
 use Kalle\Xml\Exception\FileWriteException;
 use Kalle\Xml\Exception\StreamWriteException;
 use Kalle\Xml\Writer\WriterConfig;
+use Kalle\Xml\Writer\XmlWriter;
 use PHPUnit\Framework\TestCase;
 
 use function bin2hex;
-use function fclose;
 use function file_get_contents;
 use function file_put_contents;
 use function in_array;
@@ -27,19 +27,22 @@ use function sys_get_temp_dir;
 use function tempnam;
 use function unlink;
 
-final class XmlDocumentFileOutputTest extends TestCase
+final class XmlWriterFileOutputTest extends TestCase
 {
     private const PARTIAL_WRITE_SCHEME = 'kalle-partial-write';
 
-    public function testItSavesADocumentToAFile(): void
+    public function testItWritesADocumentToAFile(): void
     {
         $path = tempnam(sys_get_temp_dir(), 'kalle-xml-');
 
         self::assertNotFalse($path);
 
         try {
-            Xml::document(Xml::element('catalog')->child(Xml::element('book')))
-                ->saveToFile($path, WriterConfig::compact(emitDeclaration: false));
+            XmlWriter::toFile(
+                XmlBuilder::document(XmlBuilder::element('catalog')->child(XmlBuilder::element('book'))),
+                $path,
+                WriterConfig::compact(emitDeclaration: false),
+            );
 
             self::assertSame('<catalog><book/></catalog>', (string) file_get_contents($path));
         } finally {
@@ -56,11 +59,12 @@ final class XmlDocumentFileOutputTest extends TestCase
         try {
             file_put_contents($path, 'stale');
 
-            Xml::document(
-                Xml::element('catalog')
-                    ->child(Xml::element('book')->attribute('isbn', '9780132350884'))
-                    ->child(Xml::element('book')->attribute('isbn', '9780321125217')),
-            )->saveToFile(
+            XmlWriter::toFile(
+                XmlBuilder::document(
+                    XmlBuilder::element('catalog')
+                        ->child(XmlBuilder::element('book')->attribute('isbn', '9780132350884'))
+                        ->child(XmlBuilder::element('book')->attribute('isbn', '9780321125217')),
+                ),
                 $path,
                 WriterConfig::pretty(emitDeclaration: false),
             );
@@ -79,7 +83,11 @@ final class XmlDocumentFileOutputTest extends TestCase
         $this->expectException(FileWriteException::class);
         $this->expectExceptionMessage('empty path');
 
-        Xml::document(Xml::element('catalog'))->saveToFile('', WriterConfig::compact());
+        XmlWriter::toFile(
+            XmlBuilder::document(XmlBuilder::element('catalog')),
+            '',
+            WriterConfig::compact(),
+        );
     }
 
     public function testItRaisesALibrarySpecificExceptionForPathsContainingNullBytes(): void
@@ -87,7 +95,11 @@ final class XmlDocumentFileOutputTest extends TestCase
         $this->expectException(FileWriteException::class);
         $this->expectExceptionMessage('null bytes');
 
-        Xml::document(Xml::element('catalog'))->saveToFile("\0invalid.xml", WriterConfig::compact());
+        XmlWriter::toFile(
+            XmlBuilder::document(XmlBuilder::element('catalog')),
+            "\0invalid.xml",
+            WriterConfig::compact(),
+        );
     }
 
     public function testItRaisesALibrarySpecificExceptionWhenTheTargetDirectoryDoesNotExist(): void
@@ -97,7 +109,11 @@ final class XmlDocumentFileOutputTest extends TestCase
         $this->expectException(FileWriteException::class);
         $this->expectExceptionMessage($path);
 
-        Xml::document(Xml::element('catalog'))->saveToFile($path, WriterConfig::compact());
+        XmlWriter::toFile(
+            XmlBuilder::document(XmlBuilder::element('catalog')),
+            $path,
+            WriterConfig::compact(),
+        );
     }
 
     public function testItRaisesALibrarySpecificExceptionForPartialWrites(): void
@@ -111,28 +127,36 @@ final class XmlDocumentFileOutputTest extends TestCase
             $this->expectExceptionMessage($path);
             $this->expectExceptionMessage('Incomplete XML write');
 
-            Xml::document(Xml::element('catalog'))->saveToFile($path, WriterConfig::compact());
+            XmlWriter::toFile(
+                XmlBuilder::document(XmlBuilder::element('catalog')),
+                $path,
+                WriterConfig::compact(),
+            );
         } finally {
             $this->unregisterPartialWriteWrapper();
         }
     }
 
-    public function testItSavesANamespacedDocumentToAFile(): void
+    public function testItWritesANamespacedDocumentToAFile(): void
     {
         $path = tempnam(sys_get_temp_dir(), 'kalle-xml-');
 
         self::assertNotFalse($path);
 
         try {
-            Xml::document(
-                Xml::element(Xml::qname('feed', 'urn:feed', 'atom'))
-                    ->declareNamespace('atom', 'urn:feed')
-                    ->declareNamespace('xlink', 'urn:xlink')
-                    ->child(
-                        Xml::element(Xml::qname('entry', 'urn:feed', 'atom'))
-                            ->attribute(Xml::qname('href', 'urn:xlink', 'xlink'), 'https://example.com/items/1'),
-                    ),
-            )->saveToFile($path, WriterConfig::compact(emitDeclaration: false));
+            XmlWriter::toFile(
+                XmlBuilder::document(
+                    XmlBuilder::element(XmlBuilder::qname('feed', 'urn:feed', 'atom'))
+                        ->declareNamespace('atom', 'urn:feed')
+                        ->declareNamespace('xlink', 'urn:xlink')
+                        ->child(
+                            XmlBuilder::element(XmlBuilder::qname('entry', 'urn:feed', 'atom'))
+                                ->attribute(XmlBuilder::qname('href', 'urn:xlink', 'xlink'), 'https://example.com/items/1'),
+                        ),
+                ),
+                $path,
+                WriterConfig::compact(emitDeclaration: false),
+            );
 
             self::assertSame(
                 '<atom:feed xmlns:atom="urn:feed" xmlns:xlink="urn:xlink"><atom:entry xlink:href="https://example.com/items/1"/></atom:feed>',
@@ -143,17 +167,21 @@ final class XmlDocumentFileOutputTest extends TestCase
         }
     }
 
-    public function testItSavesADocumentToAStreamResource(): void
+    public function testItWritesADocumentToAStreamResource(): void
     {
         $stream = fopen('php://temp', 'wb+');
 
         self::assertIsResource($stream);
 
         try {
-            Xml::document(
-                Xml::element('catalog')
-                    ->child(Xml::element('book')->attribute('isbn', '9780132350884')),
-            )->saveToStream($stream, WriterConfig::compact(emitDeclaration: false));
+            XmlWriter::toStream(
+                XmlBuilder::document(
+                    XmlBuilder::element('catalog')
+                        ->child(XmlBuilder::element('book')->attribute('isbn', '9780132350884')),
+                ),
+                $stream,
+                WriterConfig::compact(emitDeclaration: false),
+            );
 
             rewind($stream);
 
@@ -179,14 +207,18 @@ final class XmlDocumentFileOutputTest extends TestCase
             $this->expectExceptionMessage('Incomplete XML write');
             $this->expectExceptionMessage('kalle-partial-write://document.xml');
 
-            Xml::document(Xml::element('catalog'))->saveToStream($stream, WriterConfig::compact());
+            XmlWriter::toStream(
+                XmlBuilder::document(XmlBuilder::element('catalog')),
+                $stream,
+                WriterConfig::compact(),
+            );
         } finally {
             fclose($stream);
             $this->unregisterPartialWriteWrapper();
         }
     }
 
-    public function testItRejectsNonStreamResourcesWhenSavingToAStream(): void
+    public function testItRejectsNonStreamResourcesWhenWritingToAStream(): void
     {
         $directory = opendir(sys_get_temp_dir());
 
@@ -196,13 +228,17 @@ final class XmlDocumentFileOutputTest extends TestCase
             $this->expectException(StreamWriteException::class);
             $this->expectExceptionMessage('stream resource');
 
-            Xml::document(Xml::element('catalog'))->saveToStream($directory, WriterConfig::compact());
+            XmlWriter::toStream(
+                XmlBuilder::document(XmlBuilder::element('catalog')),
+                $directory,
+                WriterConfig::compact(),
+            );
         } finally {
             closedir($directory);
         }
     }
 
-    public function testItRejectsNonWritableStreamResourcesWhenSavingToAStream(): void
+    public function testItRejectsNonWritableStreamResourcesWhenWritingToAStream(): void
     {
         $path = tempnam(sys_get_temp_dir(), 'kalle-xml-readonly-');
 
@@ -216,7 +252,11 @@ final class XmlDocumentFileOutputTest extends TestCase
             $this->expectException(StreamWriteException::class);
             $this->expectExceptionMessage('not writable');
 
-            Xml::document(Xml::element('catalog'))->saveToStream($stream, WriterConfig::compact());
+            XmlWriter::toStream(
+                XmlBuilder::document(XmlBuilder::element('catalog')),
+                $stream,
+                WriterConfig::compact(),
+            );
         } finally {
             fclose($stream);
             @unlink($path);

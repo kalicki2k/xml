@@ -4,12 +4,15 @@ Use the writer guides when producing XML.
 
 `kalle/xml` has two writer paths:
 
-- `Xml` for immutable, tree-based document construction
-- `StreamingXmlWriter` for incremental output to strings, files, and streams
+- `XmlBuilder` plus `XmlWriter` for immutable, tree-based document construction and complete-document serialization
+- `StreamingXmlWriter` for incremental output to files and streams
+
+Use the first path when you want an in-memory model. Use the second when you
+want imperative output and do not need a full document tree first.
 
 ## Guides
 
-- [Build Documents with `Xml`](documents.md)
+- [Build Documents with `XmlBuilder`](documents.md)
 - [Stream XML Output](streaming.md)
 
 ## Related

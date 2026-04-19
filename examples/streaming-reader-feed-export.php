@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 
-use Kalle\Xml\Builder\Xml;
+use Kalle\Xml\Builder\XmlBuilder;
 use Kalle\Xml\Import\XmlImporter;
 use Kalle\Xml\Reader\StreamingXmlReader;
 use Kalle\Xml\Writer\StreamingXmlWriter;
@@ -43,14 +43,21 @@ rewind($stream);
 
 try {
     $reader = StreamingXmlReader::fromStream($stream);
-    $writer = StreamingXmlWriter::forString(
+    $output = fopen('php://stdout', 'wb');
+
+    if (!is_resource($output)) {
+        throw new RuntimeException('Could not open stdout for filtered XML output.');
+    }
+
+    $writer = StreamingXmlWriter::forStream(
+        $output,
         WriterConfig::compact(emitDeclaration: false),
     );
 
     $writer->startElement('selection');
 
     while ($reader->read()) {
-        if (!$reader->isStartElement(Xml::qname('entry', 'urn:feed'))) {
+        if (!$reader->isStartElement(XmlBuilder::qname('entry', 'urn:feed'))) {
             continue;
         }
 
@@ -64,8 +71,7 @@ try {
     }
 
     $writer->endElement()->finish();
-
-    echo $writer->toString() . "\n";
+    fwrite($output, "\n");
 } finally {
     fclose($stream);
 }

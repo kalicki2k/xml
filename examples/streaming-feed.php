@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 
-use Kalle\Xml\Builder\Xml;
+use Kalle\Xml\Builder\XmlBuilder;
 use Kalle\Xml\Writer\StreamingXmlWriter;
 use Kalle\Xml\Writer\WriterConfig;
 
@@ -39,7 +39,7 @@ $writer = StreamingXmlWriter::forStream($stdout, WriterConfig::pretty());
 
 $writer
     ->startDocument()
-    ->startElement(Xml::qname('feed', 'urn:feed'))
+    ->startElement(XmlBuilder::qname('feed', 'urn:feed'))
     ->declareDefaultNamespace('urn:feed')
     ->declareNamespace('dc', 'urn:dc')
     ->declareNamespace('media', 'urn:media')
@@ -48,16 +48,16 @@ $writer
 
 foreach ($entries as $entry) {
     $writer
-        ->startElement(Xml::qname('entry', 'urn:feed'))
-        ->writeAttribute(Xml::qname('href', 'urn:xlink', 'xlink'), $entry['href'])
-        ->startElement(Xml::qname('title', 'urn:feed'))
+        ->startElement(XmlBuilder::qname('entry', 'urn:feed'))
+        ->writeAttribute(XmlBuilder::qname('href', 'urn:xlink', 'xlink'), $entry['href'])
+        ->startElement(XmlBuilder::qname('title', 'urn:feed'))
         ->writeText($entry['title'])
         ->endElement()
-        ->startElement(Xml::qname('identifier', 'urn:dc', 'dc'))
+        ->startElement(XmlBuilder::qname('identifier', 'urn:dc', 'dc'))
         ->writeText($entry['id'])
         ->endElement()
-        ->startElement(Xml::qname('thumbnail', 'urn:media', 'media'))
-        ->writeAttribute(Xml::qname('href', 'urn:xlink', 'xlink'), $entry['thumbnail'])
+        ->startElement(XmlBuilder::qname('thumbnail', 'urn:media', 'media'))
+        ->writeAttribute(XmlBuilder::qname('href', 'urn:xlink', 'xlink'), $entry['thumbnail'])
         ->writeAttribute('width', 320)
         ->writeAttribute('height', 180)
         ->endElement()

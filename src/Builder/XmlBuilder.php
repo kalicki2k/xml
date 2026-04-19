@@ -13,7 +13,7 @@ use Kalle\Xml\Node\Element;
 use Kalle\Xml\Node\ProcessingInstructionNode;
 use Kalle\Xml\Node\TextNode;
 
-final class Xml
+final class XmlBuilder
 {
     private function __construct() {}
 

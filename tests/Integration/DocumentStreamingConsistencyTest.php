@@ -4,13 +4,19 @@ declare(strict_types=1);
 
 namespace Kalle\Xml\Tests\Integration;
 
-use Kalle\Xml\Builder\Xml;
+use Kalle\Xml\Builder\XmlBuilder;
 use Kalle\Xml\Document\XmlDocument;
 use Kalle\Xml\Writer\StreamingXmlWriter;
 use Kalle\Xml\Writer\WriterConfig;
+use Kalle\Xml\Writer\XmlWriter;
 use PHPUnit\Framework\TestCase;
 
+use function fclose;
+use function fopen;
+use function is_resource;
+use function rewind;
 use function str_replace;
+use function stream_get_contents;
 use function trim;
 
 final class DocumentStreamingConsistencyTest extends TestCase
@@ -22,11 +28,11 @@ final class DocumentStreamingConsistencyTest extends TestCase
 
     public function testSimpleElementsAttributesAndTextMatchBetweenDocumentAndStreamingWriter(): void
     {
-        $document = Xml::document(
-            Xml::element('catalog')
+        $document = XmlBuilder::document(
+            XmlBuilder::element('catalog')
                 ->attribute('generatedAt', '2026-04-17T10:30:00Z')
                 ->child(
-                    Xml::element('book')
+                    XmlBuilder::element('book')
                         ->attribute('isbn', '9780132350884')
                         ->text('Clean Code'),
                 ),
@@ -47,12 +53,12 @@ final class DocumentStreamingConsistencyTest extends TestCase
 
     public function testEscapingCommentsCdataAndProcessingInstructionsMatch(): void
     {
-        $document = Xml::document(
-            Xml::element('payload')
+        $document = XmlBuilder::document(
+            XmlBuilder::element('payload')
                 ->attribute('title', 'Fish & "Chips"' . "\n" . '<today>')
                 ->comment('generated export')
-                ->child(Xml::element('body')->text('Use < & enjoy'))
-                ->child(Xml::element('script')->child(Xml::cdata('if (a < b && c > d) { return "ok"; }')))
+                ->child(XmlBuilder::element('body')->text('Use < & enjoy'))
+                ->child(XmlBuilder::element('script')->child(XmlBuilder::cdata('if (a < b && c > d) { return "ok"; }')))
                 ->processingInstruction('cache-control', 'ttl="300"'),
         )->withoutDeclaration();
 
@@ -78,16 +84,16 @@ final class DocumentStreamingConsistencyTest extends TestCase
 
     public function testDefaultAndPrefixedNamespacesMatchBetweenDocumentAndStreamingWriter(): void
     {
-        $document = Xml::document(
-            Xml::element(Xml::qname('feed', 'urn:feed'))
+        $document = XmlBuilder::document(
+            XmlBuilder::element(XmlBuilder::qname('feed', 'urn:feed'))
                 ->child(
-                    Xml::element(Xml::qname('entry', 'urn:feed'))
+                    XmlBuilder::element(XmlBuilder::qname('entry', 'urn:feed'))
                         ->attribute(
-                            Xml::qname('href', 'urn:xlink', 'xlink'),
+                            XmlBuilder::qname('href', 'urn:xlink', 'xlink'),
                             'https://example.com/items/1',
                         ),
                 )
-                ->child(Xml::element('meta')->text('plain')),
+                ->child(XmlBuilder::element('meta')->text('plain')),
         )->withoutDeclaration();
 
         $this->assertStreamedXmlMatchesDocument(
@@ -95,10 +101,10 @@ final class DocumentStreamingConsistencyTest extends TestCase
             WriterConfig::compact(emitDeclaration: false),
             static function (StreamingXmlWriter $writer): void {
                 $writer
-                    ->startElement(Xml::qname('feed', 'urn:feed'))
-                    ->startElement(Xml::qname('entry', 'urn:feed'))
+                    ->startElement(XmlBuilder::qname('feed', 'urn:feed'))
+                    ->startElement(XmlBuilder::qname('entry', 'urn:feed'))
                     ->writeAttribute(
-                        Xml::qname('href', 'urn:xlink', 'xlink'),
+                        XmlBuilder::qname('href', 'urn:xlink', 'xlink'),
                         'https://example.com/items/1',
                     )
                     ->endElement()
@@ -112,25 +118,25 @@ final class DocumentStreamingConsistencyTest extends TestCase
 
     public function testPrettyPrintedRealisticCatalogMatchesAfterWhitespaceNormalization(): void
     {
-        $document = Xml::document(
-            Xml::element('catalog')
+        $document = XmlBuilder::document(
+            XmlBuilder::element('catalog')
                 ->comment('nightly export')
                 ->processingInstruction('cache-control', 'ttl="300"')
                 ->child(
-                    Xml::element('book')
+                    XmlBuilder::element('book')
                         ->attribute('sku', 'bk-001')
                         ->attribute('available', true)
-                        ->child(Xml::element('title')->text('Domain-Driven Design'))
-                        ->child(Xml::element('author')->text('Eric Evans'))
-                        ->child(Xml::element('price')->attribute('currency', 'EUR')->text('54.90')),
+                        ->child(XmlBuilder::element('title')->text('Domain-Driven Design'))
+                        ->child(XmlBuilder::element('author')->text('Eric Evans'))
+                        ->child(XmlBuilder::element('price')->attribute('currency', 'EUR')->text('54.90')),
                 )
                 ->child(
-                    Xml::element('book')
+                    XmlBuilder::element('book')
                         ->attribute('sku', 'bk-002')
                         ->attribute('available', false)
-                        ->child(Xml::element('title')->text('Patterns of Enterprise Application Architecture'))
-                        ->child(Xml::element('author')->text('Martin Fowler'))
-                        ->child(Xml::element('price')->attribute('currency', 'EUR')->text('49.00')),
+                        ->child(XmlBuilder::element('title')->text('Patterns of Enterprise Application Architecture'))
+                        ->child(XmlBuilder::element('author')->text('Martin Fowler'))
+                        ->child(XmlBuilder::element('price')->attribute('currency', 'EUR')->text('49.00')),
                 ),
         )->withoutDeclaration();
 
@@ -183,28 +189,28 @@ final class DocumentStreamingConsistencyTest extends TestCase
         $this->assertStreamedXmlMatchesDocument($document, WriterConfig::pretty(), function (StreamingXmlWriter $writer): void {
             $writer
                 ->startDocument()
-                ->startElement(Xml::qname('Invoice', self::UBL_INVOICE_NS))
+                ->startElement(XmlBuilder::qname('Invoice', self::UBL_INVOICE_NS))
                 ->declareNamespace('cac', self::UBL_CAC_NS)
                 ->declareNamespace('cbc', self::UBL_CBC_NS)
                 ->declareNamespace('xsi', self::XSI_NS)
                 ->writeAttribute(
-                    Xml::qname('schemaLocation', self::XSI_NS, 'xsi'),
+                    XmlBuilder::qname('schemaLocation', self::XSI_NS, 'xsi'),
                     self::UBL_INVOICE_NS . ' UBL-Invoice-2.1.xsd',
                 )
-                ->startElement(Xml::qname('CustomizationID', self::UBL_CBC_NS, 'cbc'))
+                ->startElement(XmlBuilder::qname('CustomizationID', self::UBL_CBC_NS, 'cbc'))
                 ->writeText('urn:cen.eu:en16931:2017')
                 ->endElement()
-                ->startElement(Xml::qname('ID', self::UBL_CBC_NS, 'cbc'))
+                ->startElement(XmlBuilder::qname('ID', self::UBL_CBC_NS, 'cbc'))
                 ->writeText('RE-2026-0042')
                 ->endElement()
-                ->startElement(Xml::qname('AccountingSupplierParty', self::UBL_CAC_NS, 'cac'))
-                ->startElement(Xml::qname('Party', self::UBL_CAC_NS, 'cac'))
-                ->startElement(Xml::qname('EndpointID', self::UBL_CBC_NS, 'cbc'))
+                ->startElement(XmlBuilder::qname('AccountingSupplierParty', self::UBL_CAC_NS, 'cac'))
+                ->startElement(XmlBuilder::qname('Party', self::UBL_CAC_NS, 'cac'))
+                ->startElement(XmlBuilder::qname('EndpointID', self::UBL_CBC_NS, 'cbc'))
                 ->writeAttribute('schemeID', '0088')
                 ->writeText('0409876543210')
                 ->endElement()
-                ->startElement(Xml::qname('PartyName', self::UBL_CAC_NS, 'cac'))
-                ->startElement(Xml::qname('Name', self::UBL_CBC_NS, 'cbc'))
+                ->startElement(XmlBuilder::qname('PartyName', self::UBL_CAC_NS, 'cac'))
+                ->startElement(XmlBuilder::qname('Name', self::UBL_CBC_NS, 'cbc'))
                 ->writeText('Muster Software GmbH')
                 ->endElement()
                 ->endElement()
@@ -223,7 +229,7 @@ final class DocumentStreamingConsistencyTest extends TestCase
         callable $write,
         bool $normalize = false,
     ): void {
-        $expected = $document->toString($config);
+        $expected = XmlWriter::toString($document, $config);
         $actual = $this->streamToString($config, $write);
 
         if ($normalize) {
@@ -239,38 +245,49 @@ final class DocumentStreamingConsistencyTest extends TestCase
      */
     private function streamToString(WriterConfig $config, callable $write): string
     {
-        $writer = StreamingXmlWriter::forString($config);
-        $write($writer);
-        $writer->finish();
+        $stream = fopen('php://temp', 'wb+');
 
-        return $writer->toString();
+        self::assertIsResource($stream);
+
+        try {
+            $writer = StreamingXmlWriter::forStream($stream, $config);
+            $write($writer);
+            $writer->finish();
+            rewind($stream);
+
+            return (string) stream_get_contents($stream);
+        } finally {
+            if (is_resource($stream)) {
+                fclose($stream);
+            }
+        }
     }
 
     private function createInvoiceDocument(): XmlDocument
     {
-        return Xml::document(
-            Xml::element(Xml::qname('Invoice', self::UBL_INVOICE_NS))
+        return XmlBuilder::document(
+            XmlBuilder::element(XmlBuilder::qname('Invoice', self::UBL_INVOICE_NS))
                 ->declareNamespace('cac', self::UBL_CAC_NS)
                 ->declareNamespace('cbc', self::UBL_CBC_NS)
                 ->declareNamespace('xsi', self::XSI_NS)
                 ->attribute(
-                    Xml::qname('schemaLocation', self::XSI_NS, 'xsi'),
+                    XmlBuilder::qname('schemaLocation', self::XSI_NS, 'xsi'),
                     self::UBL_INVOICE_NS . ' UBL-Invoice-2.1.xsd',
                 )
-                ->child(Xml::element(Xml::qname('CustomizationID', self::UBL_CBC_NS, 'cbc'))->text('urn:cen.eu:en16931:2017'))
-                ->child(Xml::element(Xml::qname('ID', self::UBL_CBC_NS, 'cbc'))->text('RE-2026-0042'))
+                ->child(XmlBuilder::element(XmlBuilder::qname('CustomizationID', self::UBL_CBC_NS, 'cbc'))->text('urn:cen.eu:en16931:2017'))
+                ->child(XmlBuilder::element(XmlBuilder::qname('ID', self::UBL_CBC_NS, 'cbc'))->text('RE-2026-0042'))
                 ->child(
-                    Xml::element(Xml::qname('AccountingSupplierParty', self::UBL_CAC_NS, 'cac'))
+                    XmlBuilder::element(XmlBuilder::qname('AccountingSupplierParty', self::UBL_CAC_NS, 'cac'))
                         ->child(
-                            Xml::element(Xml::qname('Party', self::UBL_CAC_NS, 'cac'))
+                            XmlBuilder::element(XmlBuilder::qname('Party', self::UBL_CAC_NS, 'cac'))
                                 ->child(
-                                    Xml::element(Xml::qname('EndpointID', self::UBL_CBC_NS, 'cbc'))
+                                    XmlBuilder::element(XmlBuilder::qname('EndpointID', self::UBL_CBC_NS, 'cbc'))
                                         ->attribute('schemeID', '0088')
                                         ->text('0409876543210'),
                                 )
                                 ->child(
-                                    Xml::element(Xml::qname('PartyName', self::UBL_CAC_NS, 'cac'))
-                                        ->child(Xml::element(Xml::qname('Name', self::UBL_CBC_NS, 'cbc'))->text('Muster Software GmbH')),
+                                    XmlBuilder::element(XmlBuilder::qname('PartyName', self::UBL_CAC_NS, 'cac'))
+                                        ->child(XmlBuilder::element(XmlBuilder::qname('Name', self::UBL_CBC_NS, 'cbc'))->text('Muster Software GmbH')),
                                 ),
                         ),
                 ),

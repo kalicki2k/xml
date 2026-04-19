@@ -10,8 +10,8 @@ the main methods it exposes, or the kind of result or exception to expect.
 ## Pages
 
 - [Overview](overview.md): map of the public API and where each part fits
-- [Builder](builder.md): `Xml`, `Element`, `XmlDocument`, `QualifiedName`, and `XmlDeclaration`
-- [Writer](writer.md): `StreamingXmlWriter` and `WriterConfig`
+- [Builder](builder.md): `XmlBuilder`, `Element`, `XmlDocument`, `QualifiedName`, and `XmlDeclaration`
+- [Writer](writer.md): `XmlWriter`, `StreamingXmlWriter`, and `WriterConfig`
 - [Reader](reader.md): `XmlReader`, `ReaderDocument`, and `ReaderElement`
 - [Streaming reader](streaming-reader.md): `StreamingXmlReader` and `StreamingNodeType`
 - [DOM interop](dom.md): `XmlDomBridge` plus the DOM entry points on `XmlReader`

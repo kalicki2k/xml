@@ -123,7 +123,7 @@ final class XmlReaderTest extends TestCase
         $document = XmlReader::fromString('<root xmlns:a="urn:feed"><a:entry/></root>');
 
         $this->expectException(InvalidXmlName::class);
-        $this->expectExceptionMessage('Xml::qname()');
+        $this->expectExceptionMessage('XmlBuilder::qname()');
 
         $document->rootElement()->firstChildElement('a:entry');
     }

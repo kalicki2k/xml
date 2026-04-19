@@ -6,8 +6,6 @@ namespace Kalle\Xml\Name;
 
 use Kalle\Xml\Escape\XmlEscaper;
 use Kalle\Xml\Exception\InvalidXmlName;
-use Kalle\Xml\Validate\XmlNameValidator;
-
 final readonly class QualifiedName
 {
     public const XML_NAMESPACE_URI = 'http://www.w3.org/XML/1998/namespace';

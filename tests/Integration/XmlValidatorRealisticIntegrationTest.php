@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Kalle\Xml\Tests\Integration;
 
-use Kalle\Xml\Builder\Xml;
+use Kalle\Xml\Builder\XmlBuilder;
 use Kalle\Xml\Document\XmlDocument;
 use Kalle\Xml\Name\QualifiedName;
 use Kalle\Xml\Validation\XmlValidator;
+use Kalle\Xml\Writer\XmlWriter;
 use PHPUnit\Framework\TestCase;
 
 use function array_map;
@@ -93,7 +94,7 @@ final class XmlValidatorRealisticIntegrationTest extends TestCase
         $schemaPath = $this->writeInvoiceSchemaFiles($directory);
         $xmlPath = $directory . '/invoice.xml';
 
-        file_put_contents($xmlPath, $this->createInvoiceDocument()->toString());
+        file_put_contents($xmlPath, XmlWriter::toString($this->createInvoiceDocument()));
 
         try {
             $validator = XmlValidator::fromFile($schemaPath);
@@ -149,77 +150,77 @@ XSD;
 
     private function createCatalogDocument(): XmlDocument
     {
-        return Xml::document(
-            Xml::element('catalog')
+        return XmlBuilder::document(
+            XmlBuilder::element('catalog')
                 ->attribute('generatedAt', '2026-04-17T10:30:00Z')
                 ->child(
-                    Xml::element('book')
+                    XmlBuilder::element('book')
                         ->attribute('isbn', '9780132350884')
                         ->attribute('available', true)
-                        ->child(Xml::element('title')->text('Clean Code'))
-                        ->child(Xml::element('author')->text('Robert C. Martin'))
-                        ->child(Xml::element('price')->attribute('currency', 'EUR')->text('39.90')),
+                        ->child(XmlBuilder::element('title')->text('Clean Code'))
+                        ->child(XmlBuilder::element('author')->text('Robert C. Martin'))
+                        ->child(XmlBuilder::element('price')->attribute('currency', 'EUR')->text('39.90')),
                 )
                 ->child(
-                    Xml::element('book')
+                    XmlBuilder::element('book')
                         ->attribute('isbn', '9780321125217')
                         ->attribute('available', false)
-                        ->child(Xml::element('title')->text('Domain-Driven Design'))
-                        ->child(Xml::element('author')->text('Eric Evans'))
-                        ->child(Xml::element('price')->attribute('currency', 'EUR')->text('54.90')),
+                        ->child(XmlBuilder::element('title')->text('Domain-Driven Design'))
+                        ->child(XmlBuilder::element('author')->text('Eric Evans'))
+                        ->child(XmlBuilder::element('price')->attribute('currency', 'EUR')->text('54.90')),
                 ),
         );
     }
 
     private function createInvalidCatalogDocument(): XmlDocument
     {
-        return Xml::document(
-            Xml::element('catalog')
+        return XmlBuilder::document(
+            XmlBuilder::element('catalog')
                 ->attribute('generatedAt', '2026-04-17T10:30:00Z')
                 ->child(
-                    Xml::element('book')
+                    XmlBuilder::element('book')
                         ->attribute('isbn', '9780132350884')
                         ->attribute('available', true)
-                        ->child(Xml::element('title')->text('Clean Code'))
-                        ->child(Xml::element('author')->text('Robert C. Martin')),
+                        ->child(XmlBuilder::element('title')->text('Clean Code'))
+                        ->child(XmlBuilder::element('author')->text('Robert C. Martin')),
                 )
                 ->child(
-                    Xml::element('book')
+                    XmlBuilder::element('book')
                         ->attribute('isbn', '9780321125217')
                         ->attribute('available', false)
-                        ->child(Xml::element('title')->text('Domain-Driven Design'))
-                        ->child(Xml::element('price')->attribute('currency', 'EUR')->text('54.90')),
+                        ->child(XmlBuilder::element('title')->text('Domain-Driven Design'))
+                        ->child(XmlBuilder::element('price')->attribute('currency', 'EUR')->text('54.90')),
                 ),
         );
     }
 
     private function createInvoiceDocument(): XmlDocument
     {
-        return Xml::document(
-            Xml::element(Xml::qname('Invoice', self::UBL_INVOICE_NS))
+        return XmlBuilder::document(
+            XmlBuilder::element(XmlBuilder::qname('Invoice', self::UBL_INVOICE_NS))
                 ->declareDefaultNamespace(self::UBL_INVOICE_NS)
                 ->declareNamespace('cac', self::UBL_CAC_NS)
                 ->declareNamespace('cbc', self::UBL_CBC_NS)
                 ->declareNamespace('xsi', self::XSI_NS)
-                ->attribute(Xml::qname('lang', QualifiedName::XML_NAMESPACE_URI, 'xml'), 'de')
+                ->attribute(XmlBuilder::qname('lang', QualifiedName::XML_NAMESPACE_URI, 'xml'), 'de')
                 ->attribute(
-                    Xml::qname('schemaLocation', self::XSI_NS, 'xsi'),
+                    XmlBuilder::qname('schemaLocation', self::XSI_NS, 'xsi'),
                     self::UBL_INVOICE_NS . ' invoice.xsd',
                 )
-                ->child(Xml::element(Xml::qname('ID', self::UBL_CBC_NS, 'cbc'))->text('RE-2026-0042'))
-                ->child(Xml::element(Xml::qname('IssueDate', self::UBL_CBC_NS, 'cbc'))->text('2026-04-17'))
+                ->child(XmlBuilder::element(XmlBuilder::qname('ID', self::UBL_CBC_NS, 'cbc'))->text('RE-2026-0042'))
+                ->child(XmlBuilder::element(XmlBuilder::qname('IssueDate', self::UBL_CBC_NS, 'cbc'))->text('2026-04-17'))
                 ->child(
-                    Xml::element(Xml::qname('AccountingSupplierParty', self::UBL_CAC_NS, 'cac'))
+                    XmlBuilder::element(XmlBuilder::qname('AccountingSupplierParty', self::UBL_CAC_NS, 'cac'))
                         ->child(
-                            Xml::element(Xml::qname('Party', self::UBL_CAC_NS, 'cac'))
+                            XmlBuilder::element(XmlBuilder::qname('Party', self::UBL_CAC_NS, 'cac'))
                                 ->child(
-                                    Xml::element(Xml::qname('EndpointID', self::UBL_CBC_NS, 'cbc'))
+                                    XmlBuilder::element(XmlBuilder::qname('EndpointID', self::UBL_CBC_NS, 'cbc'))
                                         ->attribute('schemeID', '0088')
                                         ->text('0409876543210'),
                                 )
                                 ->child(
-                                    Xml::element(Xml::qname('PartyName', self::UBL_CAC_NS, 'cac'))
-                                        ->child(Xml::element(Xml::qname('Name', self::UBL_CBC_NS, 'cbc'))->text('Muster Software GmbH')),
+                                    XmlBuilder::element(XmlBuilder::qname('PartyName', self::UBL_CAC_NS, 'cac'))
+                                        ->child(XmlBuilder::element(XmlBuilder::qname('Name', self::UBL_CBC_NS, 'cbc'))->text('Muster Software GmbH')),
                                 ),
                         ),
                 ),

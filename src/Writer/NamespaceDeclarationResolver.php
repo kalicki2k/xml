@@ -14,6 +14,9 @@ use Kalle\Xml\Namespace\NamespaceScope;
 use function ksort;
 use function sprintf;
 
+/**
+ * @internal
+ */
 final class NamespaceDeclarationResolver
 {
     /**

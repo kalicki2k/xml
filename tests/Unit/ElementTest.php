@@ -5,9 +5,10 @@ declare(strict_types=1);
 namespace Kalle\Xml\Tests\Unit;
 
 use Kalle\Xml\Attribute\Attribute;
-use Kalle\Xml\Builder\Xml;
+use Kalle\Xml\Builder\XmlBuilder;
 use Kalle\Xml\Node\Element;
 use Kalle\Xml\Node\TextNode;
+use Kalle\Xml\Writer\XmlWriter;
 use PHPUnit\Framework\TestCase;
 use Stringable;
 use TypeError;
@@ -18,7 +19,7 @@ final class ElementTest extends TestCase
 {
     public function testItAddsAttributesInADeterministicOrder(): void
     {
-        $element = Xml::element('book')
+        $element = XmlBuilder::element('book')
             ->attribute('isbn', '9780132350884')
             ->attribute('available', true)
             ->attribute('title', new class () implements Stringable {
@@ -43,7 +44,7 @@ final class ElementTest extends TestCase
 
     public function testNullAttributeValueRemovesAnExistingAttribute(): void
     {
-        $element = Xml::element('book')
+        $element = XmlBuilder::element('book')
             ->attribute('isbn', '9780132350884')
             ->attribute('format', 'hardcover');
 
@@ -61,7 +62,7 @@ final class ElementTest extends TestCase
 
     public function testWithoutAttributeProvidesAClearerRemovalApi(): void
     {
-        $element = Xml::element('book')
+        $element = XmlBuilder::element('book')
             ->attribute('isbn', '9780132350884')
             ->attribute('format', 'hardcover');
 
@@ -79,14 +80,14 @@ final class ElementTest extends TestCase
 
     public function testWithoutAttributeReturnsSameInstanceWhenNothingChanges(): void
     {
-        $element = Xml::element('book')->attribute('isbn', '9780132350884');
+        $element = XmlBuilder::element('book')->attribute('isbn', '9780132350884');
 
         self::assertSame($element, $element->withoutAttribute('format'));
     }
 
     public function testReplacingAnExistingAttributePreservesItsPosition(): void
     {
-        $element = Xml::element('book')
+        $element = XmlBuilder::element('book')
             ->attribute('isbn', '9780132350884')
             ->attribute('format', 'hardcover')
             ->attribute('isbn', '9780132350885');
@@ -103,15 +104,15 @@ final class ElementTest extends TestCase
 
     public function testSettingTheSameAttributeValueReturnsTheSameInstance(): void
     {
-        $element = Xml::element('book')->attribute('isbn', '9780132350884');
+        $element = XmlBuilder::element('book')->attribute('isbn', '9780132350884');
 
         self::assertSame($element, $element->attribute('isbn', '9780132350884'));
     }
 
     public function testItAddsChildElementsAndTextNodes(): void
     {
-        $element = Xml::element('book')
-            ->child(Xml::element('title')->text('Clean Code'))
+        $element = XmlBuilder::element('book')
+            ->child(XmlBuilder::element('title')->text('Clean Code'))
             ->text(' second edition');
 
         $children = $element->children();
@@ -124,10 +125,10 @@ final class ElementTest extends TestCase
 
     public function testFluentOperationsDoNotMutateTheOriginalElement(): void
     {
-        $original = Xml::element('book');
+        $original = XmlBuilder::element('book');
         $updated = $original
             ->attribute('isbn', '9780132350884')
-            ->child(Xml::text('Clean Code'));
+            ->child(XmlBuilder::text('Clean Code'));
 
         self::assertNotSame($original, $updated);
         self::assertCount(0, $original->attributes());
@@ -162,11 +163,11 @@ final class ElementTest extends TestCase
 
     public function testFluentChainingBuildsTheExpectedElementTree(): void
     {
-        $element = Xml::element('book')
+        $element = XmlBuilder::element('book')
             ->attribute('isbn', '9780132350884')
             ->attribute('available', true)
-            ->child(Xml::element('title')->text('Clean Code'))
-            ->child(Xml::element('price')->attribute('currency', 'EUR')->text('39.90'));
+            ->child(XmlBuilder::element('title')->text('Clean Code'))
+            ->child(XmlBuilder::element('price')->attribute('currency', 'EUR')->text('39.90'));
         $title = $element->children()[0];
         $price = $element->children()[1];
 
@@ -181,10 +182,10 @@ final class ElementTest extends TestCase
 
     public function testNamespaceAwareFluentChainingBuildsExpectedMetadata(): void
     {
-        $element = Xml::element(Xml::qname('entry', 'urn:feed'))
-            ->attribute(Xml::qname('href', 'urn:xlink', 'xlink'), 'https://example.com/items/1')
+        $element = XmlBuilder::element(XmlBuilder::qname('entry', 'urn:feed'))
+            ->attribute(XmlBuilder::qname('href', 'urn:xlink', 'xlink'), 'https://example.com/items/1')
             ->declareNamespace('media', 'urn:media')
-            ->child(Xml::element(Xml::qname('thumbnail', 'urn:media', 'media')));
+            ->child(XmlBuilder::element(XmlBuilder::qname('thumbnail', 'urn:media', 'media')));
 
         self::assertSame('entry', $element->name());
         self::assertSame('urn:feed', $element->namespaceUri());
@@ -197,7 +198,7 @@ final class ElementTest extends TestCase
 
     public function testRedeclaringTheSameNamespaceReturnsTheSameInstance(): void
     {
-        $element = Xml::element(Xml::qname('entry', 'urn:feed'))
+        $element = XmlBuilder::element(XmlBuilder::qname('entry', 'urn:feed'))
             ->declareNamespace('media', 'urn:media');
 
         self::assertSame($element, $element->declareNamespace('media', 'urn:media'));
@@ -205,8 +206,8 @@ final class ElementTest extends TestCase
 
     public function testNamespacedAttributesCanBeRemovedUsingQualifiedNameIdentity(): void
     {
-        $attributeName = Xml::qname('href', 'urn:xlink', 'xlink');
-        $element = Xml::element('link')->attribute($attributeName, 'https://example.com/items/1');
+        $attributeName = XmlBuilder::qname('href', 'urn:xlink', 'xlink');
+        $element = XmlBuilder::element('link')->attribute($attributeName, 'https://example.com/items/1');
 
         $updated = $element->withoutAttribute($attributeName);
 
@@ -216,7 +217,7 @@ final class ElementTest extends TestCase
 
     public function testTextNodeContentRemainsRawUntilSerialization(): void
     {
-        $document = Xml::document(Xml::element('summary')->text('Fish & Chips <3'));
+        $document = XmlBuilder::document(XmlBuilder::element('summary')->text('Fish & Chips <3'));
         $textNode = $document->root()->children()[0];
 
         self::assertInstanceOf(TextNode::class, $textNode);
@@ -224,7 +225,7 @@ final class ElementTest extends TestCase
         self::assertSame('Fish & Chips <3', $textNode->content());
         self::assertSame(
             '<?xml version="1.0" encoding="UTF-8"?><summary>Fish &amp; Chips &lt;3</summary>',
-            $document->toString(),
+            XmlWriter::toString($document),
         );
     }
 }

@@ -6,7 +6,6 @@ namespace Kalle\Xml\Writer;
 
 use Kalle\Xml\Attribute\Attribute;
 use Kalle\Xml\Document\XmlDeclaration;
-use Kalle\Xml\Document\XmlDocument;
 use Kalle\Xml\Escape\XmlEscaper;
 use Kalle\Xml\Exception\SerializationException;
 use Kalle\Xml\Name\QualifiedName;
@@ -15,18 +14,14 @@ use Kalle\Xml\Namespace\NamespaceScope;
 use Kalle\Xml\Node\CDataNode;
 use Kalle\Xml\Node\CommentNode;
 use Kalle\Xml\Node\Element;
-use Kalle\Xml\Node\Node;
 use Kalle\Xml\Node\ProcessingInstructionNode;
 use Kalle\Xml\Node\TextNode;
 use Stringable;
 
 use function array_values;
 use function count;
-use function get_debug_type;
-use function implode;
 use function sprintf;
 use function str_repeat;
-use function str_replace;
 
 final class StreamingXmlWriter
 {
@@ -41,15 +36,18 @@ final class StreamingXmlWriter
 
     private bool $finished = false;
 
+    private readonly XmlTreeSerializer $treeSerializer;
+
     private function __construct(
         private readonly WriterConfig $config,
         private readonly XmlOutput $output,
         private readonly NamespaceDeclarationResolver $namespaceResolver = new NamespaceDeclarationResolver(),
-    ) {}
-
-    public static function forString(?WriterConfig $config = null): self
-    {
-        return new self($config ?? WriterConfig::compact(), new StringXmlOutput());
+    ) {
+        $this->treeSerializer = new XmlTreeSerializer(
+            $this->config,
+            $this->output,
+            $this->namespaceResolver,
+        );
     }
 
     public static function forFile(string $path, ?WriterConfig $config = null): self
@@ -63,25 +61,6 @@ final class StreamingXmlWriter
             $config ?? WriterConfig::compact(),
             StreamXmlOutput::forStream($stream, $closeOnFinish),
         );
-    }
-
-    public function writeDocument(XmlDocument $document): self
-    {
-        $this->ensureWritable();
-
-        if ($this->declarationWritten || $this->rootWritten || $this->stack !== []) {
-            throw new SerializationException(
-                'Cannot write a document into a non-empty streaming XML writer.',
-            );
-        }
-
-        $config = $this->config;
-
-        if ($config->emitDeclaration() && $document->declaration() !== null) {
-            $this->startDocument($document->declaration());
-        }
-
-        return $this->writeElement($document->root());
     }
 
     public function startDocument(?XmlDeclaration $declaration = null): self
@@ -98,7 +77,7 @@ final class StreamingXmlWriter
             );
         }
 
-        $this->output->write($this->serializeDeclaration($declaration ?? new XmlDeclaration()));
+        $this->output->write($this->treeSerializer->serializeDeclaration($declaration ?? new XmlDeclaration()));
 
         if ($this->config->prettyPrint()) {
             $this->output->write($this->config->newline());
@@ -148,7 +127,9 @@ final class StreamingXmlWriter
     }
 
     /**
+     * @param string|QualifiedName $name
      * @param string|int|float|bool|Stringable|null $value
+     * @return StreamingXmlWriter
      */
     public function writeAttribute(string|QualifiedName $name, string|int|float|bool|Stringable|null $value): self
     {
@@ -221,7 +202,7 @@ final class StreamingXmlWriter
             }
 
             $this->rootWritten = true;
-            $this->emitElement(
+            $this->treeSerializer->serializeElement(
                 $element,
                 0,
                 NamespaceScope::empty(),
@@ -237,7 +218,7 @@ final class StreamingXmlWriter
             $this->output->write($this->config->newline());
         }
 
-        $this->emitElement(
+        $this->treeSerializer->serializeElement(
             $element,
             $childContext['depth'],
             $childContext['context'],
@@ -294,23 +275,6 @@ final class StreamingXmlWriter
         $this->output->finish();
     }
 
-    public function toString(): string
-    {
-        if (!$this->output instanceof StringXmlOutput) {
-            throw new SerializationException(
-                'Cannot return XML as a string from a non-string streaming target. Use StreamingXmlWriter::forString() for in-memory output.',
-            );
-        }
-
-        if (!$this->finished) {
-            throw new SerializationException(
-                'Cannot return XML as a string before finish() completes the document.',
-            );
-        }
-
-        return $this->output->toString();
-    }
-
     private function writeTextNode(TextNode $node): self
     {
         $this->ensureWritable();
@@ -324,7 +288,7 @@ final class StreamingXmlWriter
     {
         $this->ensureWritable();
         $this->beginTextLikeChild('write CDATA');
-        $this->output->write($this->serializeCData($node));
+        $this->output->write($this->treeSerializer->serializeCData($node));
 
         return $this;
     }
@@ -340,7 +304,7 @@ final class StreamingXmlWriter
         }
 
         $this->output->write(
-            $this->serializeComment($node, $childContext['depth'], $childContext['prettyPrint']),
+            $this->treeSerializer->serializeComment($node, $childContext['depth'], $childContext['prettyPrint']),
         );
 
         return $this;
@@ -357,7 +321,7 @@ final class StreamingXmlWriter
         }
 
         $this->output->write(
-            $this->serializeProcessingInstruction($node, $childContext['depth'], $childContext['prettyPrint']),
+            $this->treeSerializer->serializeProcessingInstruction($node, $childContext['depth'], $childContext['prettyPrint']),
         );
 
         return $this;
@@ -383,105 +347,6 @@ final class StreamingXmlWriter
         $frame->addNamespaceDeclaration($declaration);
 
         return $this;
-    }
-
-    private function emitElement(
-        Element $element,
-        int $depth,
-        NamespaceScope $context,
-        bool $prettyPrint,
-    ): void {
-        $children = $element->children();
-        $namespaceDeclarations = $this->namespaceResolver->resolve(
-            $element->qualifiedName(),
-            $this->attributesByIdentity($element->attributes()),
-            $this->namespaceDeclarationsByPrefix($element->namespaceDeclarations()),
-            $context,
-        );
-        $inScopeContext = $context->withDeclarations($namespaceDeclarations);
-        $attributes = $this->serializeAttributes($element->attributes(), $namespaceDeclarations);
-        $indent = $prettyPrint ? $this->indent($depth) : '';
-        $elementName = $element->name();
-
-        if ($children === []) {
-            if ($this->config->selfCloseEmptyElements()) {
-                $this->output->write(sprintf('%s<%s%s/>', $indent, $elementName, $attributes));
-
-                return;
-            }
-
-            $this->output->write(sprintf('%s<%s%s></%s>', $indent, $elementName, $attributes, $elementName));
-
-            return;
-        }
-
-        if ($prettyPrint && $this->containsOnlyPrettyPrintableNodes($children)) {
-            $this->output->write(sprintf('%s<%s%s>', $indent, $elementName, $attributes));
-            $this->output->write($this->config->newline());
-
-            foreach ($children as $index => $child) {
-                if ($index > 0) {
-                    $this->output->write($this->config->newline());
-                }
-
-                $this->emitNode($child, $depth + 1, $inScopeContext, true);
-            }
-
-            $this->output->write($this->config->newline());
-            $this->output->write(sprintf('%s</%s>', $indent, $elementName));
-
-            return;
-        }
-
-        $this->output->write(sprintf('%s<%s%s>', $indent, $elementName, $attributes));
-
-        foreach ($children as $child) {
-            $this->emitNode($child, 0, $inScopeContext, false);
-        }
-
-        $this->output->write(sprintf('</%s>', $elementName));
-    }
-
-    private function emitNode(
-        Node $node,
-        int $depth,
-        NamespaceScope $context,
-        bool $prettyPrint,
-    ): void {
-        if ($node instanceof Element) {
-            $this->emitElement($node, $depth, $context, $prettyPrint);
-
-            return;
-        }
-
-        if ($node instanceof TextNode) {
-            $this->output->write(XmlEscaper::escapeText($node->content()));
-
-            return;
-        }
-
-        if ($node instanceof CDataNode) {
-            $this->output->write($this->serializeCData($node));
-
-            return;
-        }
-
-        if ($node instanceof CommentNode) {
-            $this->output->write($this->serializeComment($node, $depth, $prettyPrint));
-
-            return;
-        }
-
-        if ($node instanceof ProcessingInstructionNode) {
-            $this->output->write($this->serializeProcessingInstruction($node, $depth, $prettyPrint));
-
-            return;
-        }
-
-        throw new SerializationException(sprintf(
-            'Cannot serialize node of type %s.',
-            get_debug_type($node),
-        ));
     }
 
     /**
@@ -553,7 +418,7 @@ final class StreamingXmlWriter
         $this->output->write(sprintf(
             '<%s%s>',
             $frame->lexicalName(),
-            $this->serializeAttributes(array_values($frame->attributes()), $namespaceDeclarations),
+            $this->treeSerializer->serializeAttributes(array_values($frame->attributes()), $namespaceDeclarations),
         ));
 
         $frame->markStartTagFlushed($inScopeContext);
@@ -572,7 +437,7 @@ final class StreamingXmlWriter
             $this->output->write($this->config->newline());
         }
 
-        $attributes = $this->serializeAttributes(array_values($frame->attributes()), $namespaceDeclarations);
+        $attributes = $this->treeSerializer->serializeAttributes(array_values($frame->attributes()), $namespaceDeclarations);
         $prefix = $frame->prettyPrintEnabled() ? $this->indent($frame->depth()) : '';
 
         if ($this->config->selfCloseEmptyElements()) {
@@ -588,127 +453,6 @@ final class StreamingXmlWriter
             $attributes,
             $frame->lexicalName(),
         ));
-    }
-
-    private function serializeDeclaration(XmlDeclaration $declaration): string
-    {
-        $parts = [sprintf('version="%s"', $declaration->version())];
-
-        if ($declaration->encoding() !== null) {
-            $parts[] = sprintf('encoding="%s"', XmlEscaper::escapeAttributeValue($declaration->encoding()));
-        }
-
-        if ($declaration->standalone() !== null) {
-            $parts[] = sprintf('standalone="%s"', $declaration->standalone() ? 'yes' : 'no');
-        }
-
-        return '<?xml ' . implode(' ', $parts) . '?>';
-    }
-
-    private function serializeCData(CDataNode $node): string
-    {
-        return '<![CDATA[' . str_replace(']]>', ']]]]><![CDATA[>', $node->content()) . ']]>';
-    }
-
-    private function serializeComment(CommentNode $node, int $depth, bool $prettyPrint): string
-    {
-        $indent = $prettyPrint ? $this->indent($depth) : '';
-
-        return sprintf('%s<!--%s-->', $indent, $node->content());
-    }
-
-    private function serializeProcessingInstruction(
-        ProcessingInstructionNode $node,
-        int $depth,
-        bool $prettyPrint,
-    ): string {
-        $indent = $prettyPrint ? $this->indent($depth) : '';
-
-        if ($node->data() === '') {
-            return sprintf('%s<?%s?>', $indent, $node->target());
-        }
-
-        return sprintf('%s<?%s %s?>', $indent, $node->target(), $node->data());
-    }
-
-    /**
-     * @param list<Attribute> $attributes
-     * @param list<NamespaceDeclaration> $namespaceDeclarations
-     */
-    private function serializeAttributes(array $attributes, array $namespaceDeclarations): string
-    {
-        $serialized = '';
-
-        foreach ($namespaceDeclarations as $declaration) {
-            $serialized .= sprintf(
-                ' %s="%s"',
-                $declaration->attributeName(),
-                XmlEscaper::escapeAttributeValue($declaration->uri()),
-            );
-        }
-
-        foreach ($attributes as $attribute) {
-            $serialized .= sprintf(
-                ' %s="%s"',
-                $attribute->name(),
-                XmlEscaper::escapeAttributeValue($attribute->value()),
-            );
-        }
-
-        return $serialized;
-    }
-
-    /**
-     * @param list<Node> $children
-     */
-    private function containsOnlyPrettyPrintableNodes(array $children): bool
-    {
-        foreach ($children as $child) {
-            if (!$this->isPrettyPrintableNode($child)) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    private function isPrettyPrintableNode(Node $node): bool
-    {
-        return $node instanceof Element
-            || $node instanceof CommentNode
-            || $node instanceof ProcessingInstructionNode;
-    }
-
-    /**
-     * @param list<Attribute> $attributes
-     *
-     * @return array<string, Attribute>
-     */
-    private function attributesByIdentity(array $attributes): array
-    {
-        $indexed = [];
-
-        foreach ($attributes as $attribute) {
-            $indexed[$attribute->identityKey()] = $attribute;
-        }
-
-        return $indexed;
-    }
-
-    /**
-     * @param list<NamespaceDeclaration> $namespaceDeclarations
-     *
-     * @return array<string, NamespaceDeclaration>
-     */
-    private function namespaceDeclarationsByPrefix(array $namespaceDeclarations): array
-    {
-        $indexed = [];
-
-        foreach ($namespaceDeclarations as $declaration) {
-            $indexed[$declaration->prefixKey()] = $declaration;
-        }
-
-        return $indexed;
     }
 
     private function requireOpenElement(string $operation): OpenElementFrame

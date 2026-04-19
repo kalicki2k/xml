@@ -1,25 +1,35 @@
 # Writer API
 
-The writer API covers incremental output and writer configuration.
+The writer API covers complete-document serialization, incremental output, and
+writer configuration.
+
+## `XmlWriter`
+
+`XmlWriter` is the non-streaming serializer for an existing `XmlDocument`.
+
+Important methods:
+
+- `toString(XmlDocument $document, ?WriterConfig $config = null): string`
+- `toFile(XmlDocument $document, string $path, ?WriterConfig $config = null): void`
+- `toStream(XmlDocument $document, mixed $stream, ?WriterConfig $config = null): void`
+
+Behavior notes:
+
+- `XmlWriter` keeps serialization separate from the immutable document model.
+- It applies the same XML output rules as the streaming writer without exposing
+  the streaming writer as the public whole-document serializer.
 
 ## `StreamingXmlWriter`
 
-`StreamingXmlWriter` emits XML directly to a target without requiring a full
-document tree in memory first.
+`StreamingXmlWriter` emits XML directly to file and stream targets without
+requiring a full document tree in memory first.
 
 Constructors:
 
-- `forString(?WriterConfig $config = null): self`
-  Buffers output in memory. Use `toString()` after `finish()`.
 - `forFile(string $path, ?WriterConfig $config = null): self`
-  Writes directly to a file path.
+  Writes incrementally to a file path while the writer owns the underlying stream.
 - `forStream(mixed $stream, ?WriterConfig $config = null, bool $closeOnFinish = false): self`
   Writes directly to a PHP stream resource.
-
-One-shot output:
-
-- `writeDocument(XmlDocument $document): self`
-  Writes a complete builder-side document through the streaming path.
 
 Manual lifecycle:
 
@@ -36,16 +46,13 @@ Manual lifecycle:
 - `endElement(): self`
 - `finish(): void`
 
-Buffered output:
-
-- `toString(): string`
-  Available only for `forString()` writers after `finish()`.
-
 Behavior notes:
 
 - The writer is stateful and strict about element open/close order.
 - Namespace declarations are resolved automatically from element and attribute names.
 - `writeElement()` is the bridge point for mixing in builder-side or imported subtrees.
+- Whole-document serialization belongs to `XmlWriter`; use `StreamingXmlWriter`
+  when the output itself is incremental.
 
 Common exceptions:
 

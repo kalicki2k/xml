@@ -5,8 +5,13 @@ the smallest one that fits the job.
 
 ## Writing XML
 
-- Use `Xml` when you want to build an XML tree in memory, reuse subtrees, or keep tests and fixtures readable.
+- Use `XmlBuilder` when you want to build an XML tree in memory, reuse subtrees, or keep tests and fixtures readable.
+- Use `XmlWriter` when you already have a built document and want to serialize it to a string, file, or stream.
 - Use `StreamingXmlWriter` when output is incremental, large, or should go directly to a file path or PHP stream.
+
+Those three are intentionally separate: build first, serialize complete
+documents with `XmlWriter`, or bypass the tree and stream imperatively with
+`StreamingXmlWriter`.
 
 ## Reading XML
 

@@ -13,3 +13,6 @@ package docs.
 Keep package-user documentation in the top-level [README](../../README.md),
 the public [docs index](../README.md), the capability guides, the concept
 pages, the API reference, and the runnable [examples](../../examples/README.md).
+Keep the writer-side terminology aligned across those entry points:
+`XmlBuilder` builds, `XmlWriter` serializes complete documents, and
+`StreamingXmlWriter` streams incrementally.

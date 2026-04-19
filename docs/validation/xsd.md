@@ -32,7 +32,7 @@ small API instead of a broader schema-processing framework.
 
 declare(strict_types=1);
 
-use Kalle\Xml\Builder\Xml;
+use Kalle\Xml\Builder\XmlBuilder;
 use Kalle\Xml\Validation\XmlValidator;
 
 $validator = XmlValidator::fromString(
@@ -56,12 +56,12 @@ $validator = XmlValidator::fromString(
 XSD,
 );
 
-$document = Xml::document(
-    Xml::element('catalog')
+$document = XmlBuilder::document(
+    XmlBuilder::element('catalog')
         ->child(
-            Xml::element('book')
+            XmlBuilder::element('book')
                 ->attribute('isbn', '9780132350884')
-                ->child(Xml::element('title')->text('Clean Code')),
+                ->child(XmlBuilder::element('title')->text('Clean Code')),
         ),
 );
 
@@ -97,7 +97,7 @@ The validation surface is intentionally compact:
 - it covers XSD validation, not a broader schema framework
 - it does not add mutation or transformation behavior
 - malformed XML and invalid schemas still fail fast with exceptions
-- if you need to build or transform XML before validation, use `Xml` or `XmlImporter` first
+- if you need to build or transform XML before validation, use `XmlBuilder` or `XmlImporter` first
 
 ## Related
 

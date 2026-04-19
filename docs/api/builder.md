@@ -2,10 +2,10 @@
 
 The builder-side API is for creating XML in memory through immutable objects.
 
-## `Xml`
+## `XmlBuilder`
 
-`Xml` is the static entry point for creating documents, elements, names, and
-common node objects.
+`XmlBuilder` is the static entry point for creating documents, elements, names,
+and common node objects.
 
 Important methods:
 
@@ -23,11 +23,11 @@ Important methods:
 Small example:
 
 ```php
-use Kalle\Xml\Builder\Xml;
+use Kalle\Xml\Builder\XmlBuilder;
 
-$document = Xml::document(
-    Xml::element('catalog')
-        ->child(Xml::element('book')->attribute('isbn', '9780132350884')),
+$document = XmlBuilder::document(
+    XmlBuilder::element('catalog')
+        ->child(XmlBuilder::element('book')->attribute('isbn', '9780132350884')),
 );
 ```
 
@@ -75,14 +75,11 @@ Important methods:
 - `withRoot(Element $root): self`
 - `withDeclaration(XmlDeclaration $declaration): self`
 - `withoutDeclaration(): self`
-- `toString(?WriterConfig $config = null): string`
-- `saveToFile(string $path, ?WriterConfig $config = null): void`
-- `saveToStream(mixed $stream, ?WriterConfig $config = null): void`
 
 Behavior notes:
 
-- `toString()` and the `saveTo*()` methods serialize through the same writer path used by `StreamingXmlWriter`.
-- Serialization and write failures surface writer-side exceptions such as `SerializationException`, `FileWriteException`, or `StreamWriteException`.
+- `XmlDocument` is a pure immutable document model around a root element and an optional declaration.
+- Whole-document serialization belongs to `XmlWriter`, which surfaces writer-side exceptions such as `SerializationException`, `FileWriteException`, or `StreamWriteException`.
 
 ## `QualifiedName`
 
@@ -97,7 +94,7 @@ Important methods:
 - `lexicalName(): string`
 - `identityKey(): string`
 
-Use `Xml::qname()` when you want the builder-side convenience method instead of
+Use `XmlBuilder::qname()` when you want the builder-side convenience method instead of
 calling the constructor directly.
 
 ## `XmlDeclaration`
@@ -120,4 +117,4 @@ Behavior notes:
 - [Overview](overview.md)
 - [Writer](writer.md)
 - [Work with Namespaces](../concepts/namespaces.md)
-- [Build Documents with `Xml`](../writer/documents.md)
+- [Build Documents with `XmlBuilder`](../writer/documents.md)

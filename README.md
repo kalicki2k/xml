@@ -2,10 +2,15 @@
 
 `kalle/xml` is a compact, strict XML library for PHP 8.2+.
 
+`XmlBuilder` builds immutable XML models. `XmlWriter` serializes complete
+`XmlDocument` values. `StreamingXmlWriter` is the separate imperative writer
+for incremental output to file and stream targets.
+
 It provides:
 
-- `Xml` for immutable, tree-based XML construction
-- `StreamingXmlWriter` for incremental XML output to strings, files, and streams
+- `XmlBuilder` for immutable, tree-based XML construction
+- `XmlWriter` for serializing built documents to strings, files, or streams
+- `StreamingXmlWriter` for incremental XML output to files and streams
 - `StreamingXmlReader` for incremental, cursor-based XML reading from files and streams
 - `XmlReader` for read-only traversal of existing XML
 - `XmlDomBridge` plus DOM entry points on `XmlReader` for explicit DOM interop
@@ -30,7 +35,8 @@ Runtime requirements: `ext-dom`, `ext-libxml`, and `ext-xmlreader`.
 
 Included:
 
-- tree-based XML writing with `Xml`
+- tree-based XML building with `XmlBuilder`
+- document serialization with `XmlWriter::toString()`, `toFile()`, and `toStream()`
 - streaming XML writing with `StreamingXmlWriter`
 - streaming XML reading with `StreamingXmlReader`
 - read-only XML loading with `XmlReader`
@@ -53,21 +59,25 @@ Out of scope:
 
 declare(strict_types=1);
 
-use Kalle\Xml\Builder\Xml;
+use Kalle\Xml\Builder\XmlBuilder;
+use Kalle\Xml\Writer\XmlWriter;
 
-echo Xml::document(
-    Xml::element('catalog')
+$document = XmlBuilder::document(
+    XmlBuilder::element('catalog')
         ->child(
-            Xml::element('book')
+            XmlBuilder::element('book')
                 ->attribute('isbn', '9780132350884')
-                ->child(Xml::element('title')->text('Clean Code')),
+                ->child(XmlBuilder::element('title')->text('Clean Code')),
         ),
-)->toString();
+);
+
+echo XmlWriter::toString($document);
 ```
 
 ## When To Use Each API
 
-- Use `Xml` when you want to build an XML tree in memory, reuse subtrees, or keep fixtures readable.
+- Use `XmlBuilder` when you want to build an immutable XML tree in memory, reuse subtrees, or keep fixtures readable.
+- Use `XmlWriter` when you already have a built `XmlDocument` and want a string, file, or stream.
 - Use `StreamingXmlWriter` when output is incremental, large, or should go straight to a file or stream.
 - Use `StreamingXmlReader` when input is large or incremental and you only need cursor-style inspection, subtree extraction, or filtered export.
 - Use `XmlReader` when you want a loaded tree for traversal, parent/child navigation, or queries.
@@ -75,6 +85,9 @@ echo Xml::document(
 - Use reader queries when `findAll()` or `findFirst()` is clearer than repeated traversal.
 - Use `XmlImporter` when reader results need to move back into the writer-side model.
 - Use `XmlValidator` when XML must match an XSD schema.
+
+That split is intentional: building, whole-document serialization, and
+incremental streaming stay separate so the package stays compact.
 
 ## Documentation
 

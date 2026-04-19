@@ -4,13 +4,20 @@ declare(strict_types=1);
 
 namespace Kalle\Xml\Tests\Integration;
 
-use Kalle\Xml\Builder\Xml;
+use Kalle\Xml\Builder\XmlBuilder;
 use Kalle\Xml\Document\XmlDocument;
 use Kalle\Xml\Import\XmlImporter;
 use Kalle\Xml\Reader\XmlReader;
 use Kalle\Xml\Writer\StreamingXmlWriter;
 use Kalle\Xml\Writer\WriterConfig;
+use Kalle\Xml\Writer\XmlWriter;
 use PHPUnit\Framework\TestCase;
+
+use function fclose;
+use function fopen;
+use function is_resource;
+use function rewind;
+use function stream_get_contents;
 
 final class XmlImporterIntegrationTest extends TestCase
 {
@@ -30,7 +37,7 @@ final class XmlImporterIntegrationTest extends TestCase
         self::assertNull($document->declaration());
         self::assertSame(
             '<catalog generatedAt="2026-04-18T10:30:00Z"><book isbn="9780132350884">Clean Code</book></catalog>',
-            $document->toString(WriterConfig::compact(emitDeclaration: false)),
+            XmlWriter::toString($document, WriterConfig::compact(emitDeclaration: false)),
         );
     }
 
@@ -49,7 +56,7 @@ final class XmlImporterIntegrationTest extends TestCase
         self::assertTrue($declaration->standalone());
         self::assertSame(
             '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><catalog/>',
-            $document->toString(),
+            XmlWriter::toString($document),
         );
     }
 
@@ -63,7 +70,7 @@ final class XmlImporterIntegrationTest extends TestCase
 
         self::assertSame(
             '<Invoice xmlns="' . self::UBL_INVOICE_NS . '" xmlns:cac="' . self::UBL_CAC_NS . '" xmlns:cbc="' . self::UBL_CBC_NS . '" xmlns:xsi="' . self::XSI_NS . '" xsi:schemaLocation="' . self::UBL_INVOICE_NS . ' invoice.xsd"><cbc:ID>RE-2026-0042</cbc:ID><cac:AccountingSupplierParty><cac:Party><cbc:EndpointID schemeID="0088">0409876543210</cbc:EndpointID></cac:Party></cac:AccountingSupplierParty></Invoice>',
-            $document->toString(WriterConfig::compact(emitDeclaration: false)),
+            XmlWriter::toString($document, WriterConfig::compact(emitDeclaration: false)),
         );
     }
 
@@ -90,7 +97,7 @@ XML,
 
         self::assertSame(
             '<entry xmlns="urn:feed" xmlns:xlink="urn:xlink" xlink:href="https://example.com/items/1"><title>Blue mug</title></entry>',
-            $document->toString(WriterConfig::compact(emitDeclaration: false)),
+            XmlWriter::toString($document, WriterConfig::compact(emitDeclaration: false)),
         );
     }
 
@@ -104,7 +111,7 @@ XML,
 
         self::assertSame(
             '<payload><!--generated export--><script><![CDATA[if (a < b && c > d) { return "ok"; }]]></script><?cache-control ttl="300"?><p>Hello <strong>world</strong>!</p></payload>',
-            $document->toString(WriterConfig::compact(emitDeclaration: false)),
+            XmlWriter::toString($document, WriterConfig::compact(emitDeclaration: false)),
         );
     }
 
@@ -127,7 +134,7 @@ XML,
 
         self::assertSame(
             '<catalog><book isbn="9780132350884"><title>Clean Code</title></book><book isbn="9780321125217"><title>Domain-Driven Design</title></book></catalog>',
-            $document->toString(WriterConfig::compact(emitDeclaration: false)),
+            XmlWriter::toString($document, WriterConfig::compact(emitDeclaration: false)),
         );
     }
 
@@ -152,7 +159,7 @@ XML,
 
         self::assertSame(
             '<catalog xmlns="urn:catalog"><item sku="item-1001"><title>Notebook</title><meta:flag xmlns:meta="urn:catalog-meta" meta:code="featured">yes</meta:flag></item><bundle xmlns="urn:bundle"><title>Starter bundle</title><meta:flag xmlns:meta="urn:bundle-meta" meta:code="bundle">special</meta:flag></bundle></catalog>',
-            $document->toString(WriterConfig::compact(emitDeclaration: false)),
+            XmlWriter::toString($document, WriterConfig::compact(emitDeclaration: false)),
         );
     }
 
@@ -169,11 +176,11 @@ XML,
             ->attribute('exported', true)
             ->attribute('sku', 'item-1002-copy');
 
-        $document = Xml::document($importedElement)->withoutDeclaration();
+        $document = XmlBuilder::document($importedElement)->withoutDeclaration();
 
         self::assertSame(
             '<entry xmlns="urn:feed" sku="item-1002-copy" exported="true"><title>Notebook set</title></entry>',
-            $document->toString(WriterConfig::compact(emitDeclaration: false)),
+            XmlWriter::toString($document, WriterConfig::compact(emitDeclaration: false)),
         );
     }
 
@@ -186,17 +193,17 @@ XML,
 
         self::assertCount(2, $entries);
 
-        $selection = Xml::element('selection');
+        $selection = XmlBuilder::element('selection');
 
         foreach ($entries as $entry) {
             $selection = $selection->child(XmlImporter::element($entry));
         }
 
-        $document = Xml::document($selection)->withoutDeclaration();
+        $document = XmlBuilder::document($selection)->withoutDeclaration();
 
         self::assertSame(
             '<selection><entry xmlns="urn:feed" sku="item-1001"><title>Blue mug</title></entry><entry xmlns="urn:feed" sku="item-1002"><title>Notebook set</title></entry></selection>',
-            $document->toString(WriterConfig::compact(emitDeclaration: false)),
+            XmlWriter::toString($document, WriterConfig::compact(emitDeclaration: false)),
         );
     }
 
@@ -218,19 +225,17 @@ XML,
 
         self::assertNotNull($entry);
 
-        $writer = StreamingXmlWriter::forString(
-            WriterConfig::compact(emitDeclaration: false),
-        );
-
-        $writer
-            ->startElement('export')
-            ->writeElement(XmlImporter::element($entry))
-            ->endElement()
-            ->finish();
-
         self::assertSame(
             '<export><entry xmlns="urn:feed" xmlns:xlink="urn:xlink" sku="item-1002" xlink:href="https://example.com/items/2"><title>Notebook set</title></entry></export>',
-            $writer->toString(),
+            $this->streamToString(
+                WriterConfig::compact(emitDeclaration: false),
+                static function (StreamingXmlWriter $writer) use ($entry): void {
+                    $writer
+                        ->startElement('export')
+                        ->writeElement(XmlImporter::element($entry))
+                        ->endElement();
+                },
+            ),
         );
     }
 
@@ -253,15 +258,15 @@ XML,
 
         self::assertNotNull($entry);
 
-        $document = Xml::document(
-            Xml::element(Xml::qname('selection', 'urn:export'))
+        $document = XmlBuilder::document(
+            XmlBuilder::element(XmlBuilder::qname('selection', 'urn:export'))
                 ->declareDefaultNamespace('urn:export')
                 ->child(XmlImporter::element($entry)),
         )->withoutDeclaration();
 
         self::assertSame(
             '<selection xmlns="urn:export"><entry xmlns="urn:feed" xmlns:xlink="urn:xlink" sku="item-1002" xlink:href="https://example.com/items/2"><title>Notebook set</title></entry></selection>',
-            $document->toString(WriterConfig::compact(emitDeclaration: false)),
+            XmlWriter::toString($document, WriterConfig::compact(emitDeclaration: false)),
         );
     }
 
@@ -277,5 +282,28 @@ XML,
     </entry>
 </feed>
 XML;
+    }
+
+    /**
+     * @param callable(StreamingXmlWriter): void $write
+     */
+    private function streamToString(WriterConfig $config, callable $write): string
+    {
+        $stream = fopen('php://temp', 'wb+');
+
+        self::assertIsResource($stream);
+
+        try {
+            $writer = StreamingXmlWriter::forStream($stream, $config);
+            $write($writer);
+            $writer->finish();
+            rewind($stream);
+
+            return (string) stream_get_contents($stream);
+        } finally {
+            if (is_resource($stream)) {
+                fclose($stream);
+            }
+        }
     }
 }
