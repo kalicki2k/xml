@@ -12,6 +12,7 @@ agree before a tag is created.
 - update `roadmap.md` if the release changes the current package scope or package direction
 - check that README and docs links still point to existing files
 - confirm that `docs/api/` still matches the public class and method surface
+- confirm that canonicalization docs and examples still match the documented `XmlCanonicalizer` API
 - confirm that DOM interop docs and examples still match `XmlDomBridge` and the DOM entry points on `XmlReader`
 - confirm that reader-query examples still match the documented `findFirst()` / `findAll()` API
 - confirm that import examples still match the documented `XmlImporter` API
@@ -42,6 +43,7 @@ php examples/streaming-to-file.php
 php examples/streaming-reader-catalog.php
 php examples/streaming-reader-invoice.php
 php examples/streaming-reader-feed-export.php
+php examples/canonicalize-feed.php
 php examples/reading-catalog.php
 php examples/query-feed.php
 php examples/query-invoice.php

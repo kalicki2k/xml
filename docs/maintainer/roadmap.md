@@ -4,8 +4,9 @@
 
 `kalle/xml` currently combines two writer paths with a separate streaming
 reader, a separate read-only tree reader, a small query layer built on top of
-that tree reader model, explicit DOM interop, a compact reader-to-writer
-import bridge, and compact XSD validation as separate capabilities:
+that tree reader model, compact canonicalization, explicit DOM interop, a
+compact reader-to-writer import bridge, and compact XSD validation as separate
+capabilities:
 
 - `XmlBuilder` for tree-based XML construction
 - `XmlWriter` for whole-document serialization
@@ -13,6 +14,7 @@ import bridge, and compact XSD validation as separate capabilities:
 - `StreamingXmlReader` for incremental, cursor-based XML reading from files and streams
 - `readElements()` and `StreamedElement` for compact record-by-record stream processing on top of the streaming reader
 - `XmlReader` for namespace-aware document and element traversal
+- `XmlCanonicalizer` for deterministic canonical XML output
 - `XmlDomBridge` plus DOM entry points on `XmlReader` for explicit DOM interop
 - `findAll()` and `findFirst()` on `ReaderDocument` and `ReaderElement` for small XPath-style element queries
 - `XmlImporter` for importing `ReaderDocument` and `ReaderElement` into the immutable writer-side model
@@ -27,10 +29,12 @@ The current package scope includes:
 - compact record-by-record iteration centered on `StreamingXmlReader::readElements()` and `StreamedElement`
 - read-only document and element traversal without reader concerns leaking into `XmlBuilder`
 - namespace-aware element names, attribute access, and in-scope namespace inspection
+- compact inclusive canonicalization across writer, reader, import, and DOM-backed flows
 - compact reader traversal centered around `rootElement()`, `firstChildElement()`, and `childElements()`
 - a small XPath-style query layer centered around element-oriented `findAll()` and `findFirst()` results on the reader model
 - explicit DOM export centered on `XmlDomBridge::toDomDocument()` and `XmlDomBridge::elementToDomDocument()`
 - entering the reader flow directly from `DOMDocument` and `DOMElement` through `XmlReader`
+- canonicalization coverage across writer, reader, import, and DOM-backed flows, with optional comment inclusion
 - namespace- and content-fidelity coverage for writer -> DOM -> reader/query/import/write workflows
 - realistic DOM interop examples and integration tests alongside the existing reader, import, and validation coverage
 - compact XSD validation from schema strings, files, and streams
@@ -49,14 +53,14 @@ The current package scope includes:
 
 The package remains intentionally writer-focused with a small complementary
 streaming reader, a small complementary tree reader, a reader-side query API,
-explicit DOM interop, a compact import bridge, and separate validation
-capability. Near-term work should improve writer ergonomics, reader clarity,
-DOM interop clarity, query clarity, import
-clarity, validation clarity, correctness, performance visibility, and
-documentation quality without expanding into unrelated XML features or turning
-the element-oriented query layer, the streaming reader, the DOM interop, the
-import bridge, or the
-XSD support into broader frameworks.
+compact canonicalization, explicit DOM interop, a compact import bridge, and
+separate validation capability. Near-term work should improve writer
+ergonomics, reader clarity, canonicalization clarity, DOM interop clarity,
+query clarity, import clarity, validation clarity, correctness, performance
+visibility, and documentation quality without expanding into unrelated XML
+features or turning the element-oriented query layer, the streaming reader, the
+canonicalization support, the DOM interop, the import bridge, or the XSD
+support into broader frameworks.
 
 ## Out Of Scope
 
@@ -67,7 +71,8 @@ The current roadmap excludes:
 - RELAX NG or broader schema-language support
 - mutation APIs for loaded XML
 - XML-to-array or XML-to-object mapping
-- broad transformation DSLs or diff/patch/merge engines
+- XML diff, patch, merge, digital signature, or encryption tooling
+- broad transformation DSLs
 - broad reader/query abstractions beyond the current traversal and query surface
 - broad schema-framework features beyond the current XSD validation surface
 - general-purpose XML tooling outside writing

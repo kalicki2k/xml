@@ -1,7 +1,8 @@
 # Exceptions
 
 `kalle/xml` uses dedicated exception types under `Kalle\Xml\Exception\` so
-loading, writing, querying, importing, and validation failures stay explicit.
+loading, writing, querying, canonicalization, importing, and validation
+failures stay explicit.
 
 ## Common Root
 
@@ -55,6 +56,11 @@ Builder-side validation also uses dedicated exceptions such as:
 - `DomInteropException`
   DOM export failed or a DOM value could not be entered into the reader flow.
 
+## Canonicalization
+
+- `CanonicalizationException`
+  Canonicalization failed or a required DOM input shape was missing.
+
 ## Import
 
 - `ImportException`
@@ -78,6 +84,7 @@ Practical catch points:
 - Catch `XmlException` for one broad library-level catch.
 - Catch `ReadException` when loading from files, streams, or strings.
 - Catch `StreamingReaderException` when the risky boundary is streaming-reader cursor state or subtree expansion.
+- Catch `CanonicalizationException` when the risky boundary is deterministic canonical XML output.
 - Catch `DomInteropException` when the risky boundary is native DOM export or entering the reader flow from `DOMDocument` or `DOMElement`.
 - Catch `QueryException` when user-supplied query expressions may fail.
 - Catch `ValidationException` when schema setup is the risky part.

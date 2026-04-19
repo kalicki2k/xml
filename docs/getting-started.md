@@ -4,7 +4,8 @@
 intentionally narrow in scope: build XML, stream XML output, read XML
 incrementally, load XML into a read-only tree when needed, run small
 reader-side queries, use explicit DOM interop when needed, import reader
-results back into the writer model, and validate XML against XSD.
+results back into the writer model, canonicalize XML deterministically when
+needed, and validate XML against XSD.
 
 This guide gives first-time users a practical path through those pieces.
 
@@ -23,6 +24,7 @@ Runtime requirements: `ext-dom`, `ext-libxml`, and `ext-xmlreader`.
 - Use `StreamingXmlWriter` when output should be generated incrementally or written straight to a file path or PHP stream.
 - Use `StreamingXmlReader` when input is large or incremental and you only need a cursor plus occasional subtree extraction.
 - Use `XmlReader` when you want read-only access to an already loaded XML tree.
+- Use `XmlCanonicalizer` when XML needs one stable canonical string representation.
 - Use DOM interop when you need to connect writer-side or reader-side XML flows to native `DOMDocument` or `DOMElement` values.
 - Use `findAll()` and `findFirst()` when filtered element lookups are clearer than repeated traversal.
 - Use `XmlImporter` when loaded or queried XML should move back into the writer-side model.
@@ -244,7 +246,24 @@ if ($result->isValid()) {
 Invalid but well-formed XML returns a `ValidationResult`. Malformed XML and
 invalid schemas still raise exceptions.
 
-## 10. Keep Namespace Handling Simple
+## 10. Canonicalize XML When Stable Output Matters
+
+```php
+<?php
+
+declare(strict_types=1);
+
+use Kalle\Xml\Canonicalization\XmlCanonicalizer;
+
+echo XmlCanonicalizer::document($catalogDocument) . "\n";
+```
+
+Use canonicalization when one deterministic XML string should be used for
+snapshots, comparison, hashing, or deduplication. The canonicalization surface
+stays intentionally small and separate from querying, validation, and DOM
+interop.
+
+## 11. Keep Namespace Handling Simple
 
 - Use `XmlBuilder::qname()` when building namespaced elements or attributes.
 - Use `QualifiedName` when a reader lookup must match a specific namespace URI.
@@ -253,10 +272,11 @@ invalid schemas still raise exceptions.
 - XPath does not apply the XML default namespace automatically, so queries need an explicit alias such as `['feed' => 'urn:feed']`.
 - `XmlImporter` preserves namespace-aware names and rebuilds root-level namespace declarations from imported subtrees.
 
-## 11. Where To Go Next
+## 12. Where To Go Next
 
 - Continue with [Writer guides](writer/README.md) for tree-based and streaming output.
 - Continue with [Reader guides](reader/README.md) for streaming, traversal, and query details.
+- Continue with the [Canonicalization guide](canonicalization/README.md) when XML should normalize to one canonical output.
 - Continue with the [DOM interop guide](dom/interop.md) when you need native DOM in the middle of a workflow.
 - Continue with [Import guides](import/README.md) for reader-to-writer workflows.
 - Continue with [Validation guides](validation/README.md) for schema-focused validation details.

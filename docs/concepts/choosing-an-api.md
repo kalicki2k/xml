@@ -22,14 +22,15 @@ documents with `XmlWriter`, or bypass the tree and stream imperatively with
 ## Bridging and Validation
 
 - Use `XmlDomBridge` plus `XmlReader::fromDomDocument()` or `XmlReader::fromDomElement()` when existing code already works with native DOM values.
+- Use `XmlCanonicalizer` when XML should normalize to one deterministic canonical string.
 - Use `XmlImporter` when loaded or queried XML needs to move back into the writer-side model.
 - Use `XmlValidator` when well-formed XML is not enough and the document must match an XSD schema.
 
 ## Keep the APIs Separate
 
-The package intentionally keeps writing, reading, querying, importing, and
-validation as separate capabilities. That keeps each surface small and avoids
-blurring the library into a broad XML framework.
+The package intentionally keeps writing, reading, querying, canonicalizing,
+importing, and validation as separate capabilities. That keeps each surface
+small and avoids blurring the library into a broad XML framework.
 
 ## Related
 
@@ -37,5 +38,6 @@ blurring the library into a broad XML framework.
 - [Writer guides](../writer/README.md)
 - [Reader guides](../reader/README.md)
 - [DOM interop guide](../dom/interop.md)
+- [Canonicalization guide](../canonicalization/README.md)
 - [Import guides](../import/README.md)
 - [Validation guides](../validation/README.md)

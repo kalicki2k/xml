@@ -65,6 +65,17 @@ Use DOM interop when existing code already works with native DOM values.
 
 Continue with [DOM interop](dom.md).
 
+## Canonicalization
+
+Use `XmlCanonicalizer` when XML needs one deterministic canonical string
+representation.
+
+- `XmlCanonicalizer` canonicalizes writer-built documents, reader documents, reader subtrees, native `DOMDocument` values, and raw XML strings.
+- `CanonicalizationOptions` keeps the option surface intentionally small and only controls comment inclusion.
+- Canonicalization stays separate from querying, importing, validation, and DOM wrapper concerns.
+
+Continue with [Canonicalization](canonicalization.md).
+
 ## Import and Validation
 
 Use these capabilities when reader and writer workflows need to meet, or when
@@ -84,6 +95,7 @@ Most library failures use dedicated exception types under
 - `SerializationException` covers writer-state problems.
 - `ReadException` and `QueryException` cover loading and query failures.
 - `StreamingReaderException` covers streaming-reader state and element-expansion misuse.
+- `CanonicalizationException` covers canonicalization failures.
 - `ValidationException` covers schema-setup failures.
 - `DomInteropException` covers DOM-export and DOM-entry-point failures.
 - `XmlException` is the common root for library-specific runtime errors.

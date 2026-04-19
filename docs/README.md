@@ -20,6 +20,7 @@ incrementally with `StreamingXmlWriter`.
 - [Writer guides](writer/README.md)
 - [Reader guides](reader/README.md)
 - [Streaming reader guide](reader/streaming.md)
+- [Canonicalization guide](canonicalization/README.md)
 - [DOM interop guide](dom/interop.md)
 - [Import guides](import/README.md)
 - [Validation guides](validation/README.md)

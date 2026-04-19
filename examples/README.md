@@ -1,7 +1,8 @@
 # Examples
 
 Runnable examples for tree-based writing, streaming writing, streaming reading,
-read-only tree reading, DOM interop, query, import, and validation APIs.
+read-only tree reading, canonicalization, DOM interop, query, import, and
+validation APIs.
 
 Use them alongside the docs:
 
@@ -38,6 +39,10 @@ Use them alongside the docs:
 - `reading-config.php` loads a config-like XML document from a string.
 - `reading-feed.php` loads namespace-aware XML from a file and reads prefixed attributes.
 - `reading-stream.php` loads an invoice-style XML document from a PHP stream.
+
+## Canonicalization
+
+- `canonicalize-feed.php` canonicalizes the same namespace-aware XML across writer, reader, importer, and DOM flows and confirms the canonical output stays identical.
 
 ## DOM Interop
 
@@ -80,6 +85,7 @@ php examples/reading-catalog.php
 php examples/reading-config.php
 php examples/reading-feed.php
 php examples/reading-stream.php
+php examples/canonicalize-feed.php
 php examples/validate-catalog.php
 php examples/validate-feed.php
 php examples/namespaced-feed.php
