@@ -9,7 +9,7 @@ agree before a tag is created.
 - confirm that public guides and examples use only the final public API names
 - confirm that writer-side docs and examples keep the final split explicit:
   `XmlBuilder` builds, `XmlWriter` serializes complete documents, and `StreamingXmlWriter` streams incrementally
-- update `roadmap.md` if the release changes milestone status or package direction
+- update `roadmap.md` if the release changes the current package scope or package direction
 - check that README and docs links still point to existing files
 - confirm that `docs/api/` still matches the public class and method surface
 - confirm that DOM interop docs and examples still match `XmlDomBridge` and the DOM entry points on `XmlReader`

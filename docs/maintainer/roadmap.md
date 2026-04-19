@@ -1,8 +1,8 @@
 # Roadmap
 
-## v1.7 Status
+## Current Package Scope
 
-`kalle/xml` v1.7 now combines two writer paths with a separate streaming
+`kalle/xml` currently combines two writer paths with a separate streaming
 reader, a separate read-only tree reader, a small query layer built on top of
 that tree reader model, explicit DOM interop, a compact reader-to-writer
 import bridge, and compact XSD validation as separate capabilities:
@@ -17,7 +17,7 @@ import bridge, and compact XSD validation as separate capabilities:
 - `XmlImporter` for importing `ReaderDocument` and `ReaderElement` into the immutable writer-side model
 - `XmlValidator` for validating XML strings, files, streams, and `XmlDocument` instances against XSD schemas
 
-The v1.7 milestone adds:
+The current package scope includes:
 
 - loading XML from strings, files, and PHP streams
 - incremental, namespace-aware streaming XML reading from files and streams
@@ -58,7 +58,7 @@ XSD support into broader frameworks.
 
 ## Out Of Scope
 
-The roadmap still excludes:
+The current roadmap excludes:
 
 - full DOM/XPath wrapper APIs beyond the current query layer
 - broad SAX/event-bus abstractions beyond the current streaming cursor

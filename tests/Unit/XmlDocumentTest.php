@@ -8,6 +8,7 @@ use Kalle\Xml\Builder\XmlBuilder;
 use Kalle\Xml\Document\XmlDeclaration;
 use Kalle\Xml\Document\XmlDocument;
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 use ReflectionMethod;
 
 final class XmlDocumentTest extends TestCase
@@ -84,7 +85,7 @@ final class XmlDocumentTest extends TestCase
     {
         $publicMethods = array_map(
             static fn (ReflectionMethod $method): string => $method->getName(),
-            (new \ReflectionClass(XmlDocument::class))->getMethods(ReflectionMethod::IS_PUBLIC),
+            (new ReflectionClass(XmlDocument::class))->getMethods(ReflectionMethod::IS_PUBLIC),
         );
 
         self::assertNotContains('toString', $publicMethods);

@@ -7,9 +7,9 @@ namespace Kalle\Xml\Name;
 use Kalle\Xml\Exception\InvalidXmlName;
 
 use function preg_match;
+use function sprintf;
 use function str_contains;
 use function strcasecmp;
-use function sprintf;
 
 final class XmlNameValidator
 {
